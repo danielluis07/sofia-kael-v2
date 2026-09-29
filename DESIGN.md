@@ -18,27 +18,28 @@ The style guide for the Kael Neurology site. Read `CONTEXT.md` for vocabulary; t
 
 Light theme only. There is no dark mode; strip the scaffold's `.dark` tokens.
 
-| Token | Hex | Use |
-|---|---|---|
-| `--paper` | `#F6F4F0` | Page background. A slightly cool porcelain white, not cream. |
-| `--paper-2` | `#ECE8E1` | Brain Explorer stage, alternate bands, input fills on hover |
-| `--surface` | `#FFFFFF` | Structure panel, bottom sheet, form success card |
-| `--ink` | `#1B1918` | Primary text, section rules, icons |
-| `--ink-soft` | `#5D5752` | Secondary text, mono labels, leader lines |
-| `--rule` | `#D6D0C7` | Hairline borders and dividers |
-| `--oxblood` | `#6E1F24` | The single accent: primary buttons, links on hover, italic headline emphasis, selected Structures, Slice plane frame |
-| `--oxblood-deep` | `#56171B` | Primary button hover/active |
-| `--oxblood-tint` | `#F0E2E0` | Condition chips, selected rows in the Structure index |
+| Token            | Hex       | Use                                                                                                                  |
+| ---------------- | --------- | -------------------------------------------------------------------------------------------------------------------- |
+| `--paper`        | `#FCFBFA` | Page background. A near-white porcelain tone, not stark white.                                                       |
+| `--paper-2`      | `#ECE8E1` | Brain Explorer stage, alternate bands, input fills on hover                                                          |
+| `--surface`      | `#FFFFFF` | Structure panel, bottom sheet, form success card                                                                     |
+| `--ink`          | `#1B1918` | Primary text, section rules, icons                                                                                   |
+| `--ink-soft`     | `#5D5752` | Secondary text, mono labels, leader lines                                                                            |
+| `--rule`         | `#D6D0C7` | Hairline borders and dividers                                                                                        |
+| `--oxblood`      | `#6E1F24` | The single accent: primary buttons, links on hover, italic headline emphasis, selected Structures, Slice plane frame |
+| `--oxblood-deep` | `#56171B` | Primary button hover/active                                                                                          |
+| `--oxblood-tint` | `#F0E2E0` | Condition chips, selected rows in the Structure index                                                                |
 
 **3D material colors** (used in the Brain Explorer only):
 
-| Token | Hex | Use |
-|---|---|---|
-| `--porcelain` | `#EFEBE4` | Base brain material |
-| `--porcelain-cut` | `#B9AFA3` | Faces exposed by Slice, the "inside of the cast" |
-| `--porcelain-ghost` | `#EFEBE4` at 8% opacity | Non-isolated Structures during Isolate |
+| Token               | Hex                     | Use                                              |
+| ------------------- | ----------------------- | ------------------------------------------------ |
+| `--porcelain`       | `#EFEBE4`               | Base brain material                              |
+| `--porcelain-cut`   | `#B9AFA3`               | Faces exposed by Slice, the "inside of the cast" |
+| `--porcelain-ghost` | `#EFEBE4` at 8% opacity | Non-isolated Structures during Isolate           |
 
 **Rules**
+
 - Oxblood is the only chromatic color on the page. Use it sparingly: one italic word per headline at most, and one primary button per viewport.
 - Text contrast is at least 4.5:1. `--ink-soft` on `--paper` passes; never put `--ink-soft` on `--paper-2` for text under 14px.
 - Semantic colors (form errors) use `--oxblood` plus an icon and text. There is no extra red or green.
@@ -47,30 +48,31 @@ Light theme only. There is no dark mode; strip the scaffold's `.dark` tokens.
 
 ## 3. Typography
 
-| Role | Family | Notes |
-|---|---|---|
-| Display | **Instrument Serif** (400, plus italic) | Headlines, Structure names, pull quotes, wordmark. It has one weight, so hierarchy comes from size only. |
-| Body / UI | **Geist** (300–600) | Paragraphs, buttons, form fields, navigation |
-| Utility | **Geist Mono** (400–500) | Eyebrows, labels, leader-line captions, Latin names (italic), coordinates, years |
+| Role      | Family                                  | Notes                                                                                                    |
+| --------- | --------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| Display   | **Instrument Serif** (400, plus italic) | Headlines, Structure names, pull quotes, wordmark. It has one weight, so hierarchy comes from size only. |
+| Body / UI | **Geist** (300–600)                     | Paragraphs, buttons, form fields, navigation                                                             |
+| Utility   | **Geist Mono** (400–500)                | Eyebrows, labels, leader-line captions, Latin names (italic), coordinates, years                         |
 
 Load through `next/font/google` in `fonts/index.ts`. Remove Inter.
 
 **Scale**
 
-| Token | Size | Line height | Tracking | Face |
-|---|---|---|---|---|
-| `display-xl` | `clamp(56px, 8vw, 128px)` | 0.95 | −0.015em | Serif. Hero headline only. |
-| `display-l` | `clamp(40px, 5.5vw, 80px)` | 1.0 | −0.015em | Serif. Section headlines. |
-| `display-m` | `clamp(32px, 3.5vw, 44px)` | 1.05 | −0.01em | Serif. Structure name, Condition names, pull quotes. |
-| `body-l` | 19px | 1.6 | 0 | Geist 400. Ledes. |
-| `body` | 16px | 1.65 | 0 | Geist 400 |
-| `body-s` | 14px | 1.55 | 0 | Geist 400. Captions, panel text. |
-| `label` | 11–12px | 1.3 | +0.12em, uppercase | Geist Mono 400/500 |
-| `latin` | 13px | 1.3 | 0, italic | Geist Mono 400 |
+| Token        | Size                       | Line height | Tracking           | Face                                                 |
+| ------------ | -------------------------- | ----------- | ------------------ | ---------------------------------------------------- |
+| `display-xl` | `clamp(56px, 8vw, 128px)`  | 0.95        | −0.015em           | Serif. Hero headline only.                           |
+| `display-l`  | `clamp(40px, 5.5vw, 80px)` | 1.0         | −0.015em           | Serif. Section headlines.                            |
+| `display-m`  | `clamp(32px, 3.5vw, 44px)` | 1.05        | −0.01em            | Serif. Structure name, Condition names, pull quotes. |
+| `body-l`     | 19px                       | 1.6         | 0                  | Geist 400. Ledes.                                    |
+| `body`       | 16px                       | 1.65        | 0                  | Geist 400                                            |
+| `body-s`     | 14px                       | 1.55        | 0                  | Geist 400. Captions, panel text.                     |
+| `label`      | 11–12px                    | 1.3         | +0.12em, uppercase | Geist Mono 400/500                                   |
+| `latin`      | 13px                       | 1.3         | 0, italic          | Geist Mono 400                                       |
 
 **Rules**
+
 - Headlines use `text-wrap: balance`. Running text stays at most about 65ch wide.
-- Italic serif in `--oxblood` marks the single emphasized word or phrase in a headline, e.g. "Clear answers for the brain's *hardest* questions."
+- Italic serif in `--oxblood` marks the single emphasized word or phrase in a headline, e.g. "Clear answers for the brain's _hardest_ questions."
 - Numbers that align (years, coordinates, hours) use `tabular-nums`.
 - Never set body text in the serif, and never set headlines in Geist.
 
@@ -112,14 +114,14 @@ A callout, borrowed from anatomical plates, is the site's recurring visual motif
 
 ## 7. Motion
 
-| Token | Value |
-|---|---|
-| `--ease-out` | `cubic-bezier(0.2, 0.7, 0.2, 1)` |
+| Token           | Value                            |
+| --------------- | -------------------------------- |
+| `--ease-out`    | `cubic-bezier(0.2, 0.7, 0.2, 1)` |
 | `--ease-in-out` | `cubic-bezier(0.65, 0, 0.35, 1)` |
-| `--dur-fast` | 200ms |
-| `--dur-base` | 400ms |
-| `--dur-slow` | 700ms |
-| `--dur-camera` | 900ms |
+| `--dur-fast`    | 200ms                            |
+| `--dur-base`    | 400ms                            |
+| `--dur-slow`    | 700ms                            |
+| `--dur-camera`  | 900ms                            |
 
 - **On the page, motion is restrained:** elements fade in and rise 12px once as they enter the viewport, with at most 60ms stagger within a group. Content is fully visible at rest with no JS. There's no parallax, no split-text headlines and no scroll-jacking.
 - **In the Brain Explorer, motion is rich:**
@@ -137,18 +139,22 @@ A callout, borrowed from anatomical plates, is the site's recurring visual motif
 A single page with anchor navigation, in this order:
 
 ### Navigation
+
 A sticky top bar on `--paper` with a hairline bottom border that appears after scrolling. The wordmark "Kael Neurology" is set in the serif on the left. Anchor links in mono `label` style sit in the center or right: About, Conditions, Brain Explorer, First visit, Contact. A "Book a consultation" pill sits on the far right. On mobile the links move into a full-screen sheet with the links in the serif at `display-m`.
 
 ### 1. Hero
+
 - The headline in `display-xl` spans roughly columns 1–7, with one oxblood italic word.
 - Below it: a one-paragraph `body-l` lede, the primary CTA "Book a consultation", and a secondary underlined link "Explore the brain" that scrolls to the Brain Explorer.
 - A tall 4:5 **portrait of Dr. Kael** sits in columns 8–12, carrying a decorative leader-line callout.
 - The hero is sized to its content, not locked to 100vh.
 
 ### 2. About
+
 A second portrait, a candid 3/4 crop from the same identity. A short bio in third person, plus one pull quote in serif italic at `display-m`.
 
 ### 3. Conditions
+
 - Shown as an **editorial index, not cards**. Each Condition is a row separated by hairlines, with three parts:
   - the Condition name in the serif at `display-m`
   - a one-line plain description
@@ -157,25 +163,32 @@ A second portrait, a candid 3/4 crop from the same identity. A short bio in thir
 - That action scrolls to the Brain Explorer and Isolates the involved Structures (see §9).
 
 ### 4. Brain Explorer
+
 See §9.
 
 ### 5. First visit
+
 Three or four numbered steps (the one place numbering is allowed), such as: before your visit, the consultation, tests if needed, the follow-up plan. Written in second person.
 
 ### 6. Credentials & research
+
 Two columns:
+
 - **Training & affiliations:** a timeline with mono years.
 - **Selected publications:** title, venue and year.
 
 All institutions, hospitals and journals are **fictional**. Never attribute invented papers or positions to real journals or real hospitals.
 
 ### 7. Contact
+
 - **Form:** name, email, phone (optional), reason for visit, preferred time. Inputs have a bottom border only, with mono `label` labels above them.
 - **On submit:** client-side validation, then a success state in a `--surface` panel ("Thank you. Kael Neurology will call you within two business days."). **Nothing is sent.**
 - **Beside the form:** the fictional Boston address, hours with tabular numbers, and phone. No map embed.
 
 ### 8. Footer
+
 The wordmark, the anchor links, and two required lines in `body-s` `--ink-soft`:
+
 - "Brain model: Z-Anatomy – The libre 3D atlas of anatomy, and BodyParts3D (DBCLS), licensed CC BY-SA 4.0."
 - "Dr. Sofia Kael and Kael Neurology are fictional. This site is a design project and does not provide medical advice."
 
@@ -184,11 +197,13 @@ The wordmark, the anchor links, and two required lines in `body-s` `--ink-soft`:
 ## 9. Brain Explorer
 
 ### Stage
+
 - **Desktop:** full-bleed and roughly `100svh`, with a `--paper-2` background, a 1px `--ink` rule above, and the section eyebrow and headline overlaid top-left.
 - **Brain placement:** centered, starting in a three-quarter left view with a slow idle rotation, lit by soft hemispheric light and a soft contact shadow.
 - **First-use hint:** the leader-line caption "Drag to rotate · Click a Structure", which fades out after the first interaction.
 
 ### Model and material
+
 - The model is the Z-Anatomy GLB (see `docs/adr/0001-z-anatomy-brain-model.md`), with vessels, meninges and cranial nerves hidden.
 - **Porcelain specimen:** a matte `--porcelain` material with soft roughness and gentle ambient occlusion, like a museum plaster cast. There are no realistic tissue textures.
 - Structures take color only when selected or linked; they turn `--oxblood`.
@@ -196,25 +211,28 @@ The wordmark, the anchor links, and two required lines in `body-s` `--ink-soft`:
 - Loads lazily as the section approaches. The placeholder is a line drawing of the brain with a mono readout: "Loading specimen · 62%".
 
 ### Structures (initial list, around 20)
+
 A Structure is the bilateral pair: selecting it highlights both sides.
 
 Frontal lobe · Parietal lobe · Temporal lobe · Occipital lobe · Insula · Precentral gyrus (motor cortex) · Postcentral gyrus (sensory cortex) · Cingulate gyrus · Corpus callosum · Thalamus · Hypothalamus · Hippocampus · Amygdala · Basal ganglia · Substantia nigra · Ventricles · Midbrain · Pons · Medulla oblongata · Cerebellum
 
 ### Tools
+
 The tool rail sits at the bottom center: a hairline-bordered `--surface` bar with icon plus mono label buttons. Tool buttons use `aria-pressed`.
 
-| Tool | Behavior |
-|---|---|
-| **Rotate** | Always on: drag to orbit, scroll or pinch to zoom (clamped). Not a button. |
-| **Slice** *(signature)* | A cutting plane with a segmented control (Sagittal / Coronal / Axial) and a slider. The plane is drawn as a hairline `--oxblood` frame. A mono readout shows e.g. "Coronal · y = −22 mm". |
-| **Split** | The hemispheres slide apart along the midline, and the camera swings to show the medial surface and corpus callosum. |
-| **X-ray** | The cortex cross-fades to frosted translucent porcelain, and deep Structures stay opaque. |
-| **Isolate** | Available when a Structure is selected: every other Structure fades to `--porcelain-ghost`. |
-| **Reset** | Returns the camera and all tools to the initial state. |
+| Tool                    | Behavior                                                                                                                                                                                  |
+| ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Rotate**              | Always on: drag to orbit, scroll or pinch to zoom (clamped). Not a button.                                                                                                                |
+| **Slice** _(signature)_ | A cutting plane with a segmented control (Sagittal / Coronal / Axial) and a slider. The plane is drawn as a hairline `--oxblood` frame. A mono readout shows e.g. "Coronal · y = −22 mm". |
+| **Split**               | The hemispheres slide apart along the midline, and the camera swings to show the medial surface and corpus callosum.                                                                      |
+| **X-ray**               | The cortex cross-fades to frosted translucent porcelain, and deep Structures stay opaque.                                                                                                 |
+| **Isolate**             | Available when a Structure is selected: every other Structure fades to `--porcelain-ghost`.                                                                                               |
+| **Reset**               | Returns the camera and all tools to the initial state.                                                                                                                                    |
 
 Tools can combine, e.g. X-ray + Isolate, or Slice while Split.
 
 ### Interaction
+
 - **Hover or focus:** a leader-line callout with the Structure's name.
 - **Select (click, tap or index):** the Structure turns `--oxblood` and the camera eases to frame it. The **Structure panel** slides in from the right, 360–400px wide, with a `--surface` fill and a hairline border. It contains:
   - the Structure name in the serif at `display-m`
@@ -230,20 +248,21 @@ Tools can combine, e.g. X-ray + Isolate, or Slice while Split.
 
 ### Condition ↔ Structure map (initial content)
 
-| Condition | Structures |
-|---|---|
-| Epilepsy (temporal lobe) | Hippocampus, Temporal lobe, Amygdala |
-| Alzheimer's disease | Hippocampus, Temporal lobe, Parietal lobe |
-| Parkinson's disease | Substantia nigra, Basal ganglia |
-| Essential tremor | Cerebellum, Thalamus |
-| Stroke | Precentral gyrus, Frontal lobe, Parietal lobe |
-| Migraine | Occipital lobe, Thalamus, Pons |
-| Multiple sclerosis | Corpus callosum, Ventricles, Midbrain |
-| Hydrocephalus | Ventricles |
-| Ataxia | Cerebellum |
-| Vertigo | Pons, Medulla oblongata, Cerebellum |
+| Condition                | Structures                                    |
+| ------------------------ | --------------------------------------------- |
+| Epilepsy (temporal lobe) | Hippocampus, Temporal lobe, Amygdala          |
+| Alzheimer's disease      | Hippocampus, Temporal lobe, Parietal lobe     |
+| Parkinson's disease      | Substantia nigra, Basal ganglia               |
+| Essential tremor         | Cerebellum, Thalamus                          |
+| Stroke                   | Precentral gyrus, Frontal lobe, Parietal lobe |
+| Migraine                 | Occipital lobe, Thalamus, Pons                |
+| Multiple sclerosis       | Corpus callosum, Ventricles, Midbrain         |
+| Hydrocephalus            | Ventricles                                    |
+| Ataxia                   | Cerebellum                                    |
+| Vertigo                  | Pons, Medulla oblongata, Cerebellum           |
 
 ### Mobile
+
 - The stage runs edge to edge with the full toolset.
 - **Scroll safety:** before activation, one-finger drags scroll the page. The stage shows a "Tap to explore" caption. After a tap, the canvas captures gestures (one finger rotates, pinch zooms) and an "Exit" button appears top-right.
 - **Bottom sheet:**
@@ -251,6 +270,7 @@ Tools can combine, e.g. X-ray + Isolate, or Slice while Split.
   - The Slice slider lives in the sheet.
 
 ### Accessibility
+
 - All Structures are reachable through the Structure index and keyboard.
 - Tools are real buttons with labels.
 - The canvas has a text description.
@@ -261,15 +281,15 @@ Tools can combine, e.g. X-ray + Isolate, or Slice while Split.
 
 ## 10. Components (quick reference)
 
-| Component | Spec |
-|---|---|
-| **Primary button** | Pill, `--oxblood` fill, `--paper` text, Geist 500 14px, padding 14×20. Hover: `--oxblood-deep`. |
-| **Secondary link** | Geist 500, `--ink`, underline offset 4px in `--rule`. Hover: underline turns `--oxblood`. |
-| **Chip** | Pill, `--oxblood-tint` fill, `--oxblood` text, Geist 500 12.5px, padding 7×10 |
-| **Eyebrow** | Mono `label`, `--ink-soft` |
-| **Input** | Bottom border only (1px `--ink-soft`); on focus, 1px `--oxblood` plus the label turns `--oxblood`. Errors are `--oxblood` text below the field. |
-| **Focus ring** | `outline: 2px solid var(--oxblood); outline-offset: 3px` on every interactive element |
-| **Icons** | lucide, stroke 1.5, 16px in UI and 20px in the tool rail. Always paired with a text label in the tool rail. Never used as decoration or section markers. |
+| Component          | Spec                                                                                                                                                     |
+| ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Primary button** | Pill, `--oxblood` fill, `--paper` text, Geist 500 14px, padding 14×20. Hover: `--oxblood-deep`.                                                          |
+| **Secondary link** | Geist 500, `--ink`, underline offset 4px in `--rule`. Hover: underline turns `--oxblood`.                                                                |
+| **Chip**           | Pill, `--oxblood-tint` fill, `--oxblood` text, Geist 500 12.5px, padding 7×10                                                                            |
+| **Eyebrow**        | Mono `label`, `--ink-soft`                                                                                                                               |
+| **Input**          | Bottom border only (1px `--ink-soft`); on focus, 1px `--oxblood` plus the label turns `--oxblood`. Errors are `--oxblood` text below the field.          |
+| **Focus ring**     | `outline: 2px solid var(--oxblood); outline-offset: 3px` on every interactive element                                                                    |
+| **Icons**          | lucide, stroke 1.5, 16px in UI and 20px in the tool rail. Always paired with a text label in the tool rail. Never used as decoration or section markers. |
 
 ---
 

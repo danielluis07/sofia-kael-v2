@@ -59,8 +59,10 @@
   /* Typography — DESIGN.md §3 */
   --font-serif: var(--font-instrument-serif), Georgia, "Times New Roman", serif;
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
-  --font-mono: var(--font-geist-mono), ui-monospace, "SFMono-Regular", monospace;
-  --font-heading: var(--font-instrument-serif), Georgia, "Times New Roman", serif;
+  --font-mono:
+    var(--font-geist-mono), ui-monospace, "SFMono-Regular", monospace;
+  --font-heading:
+    var(--font-instrument-serif), Georgia, "Times New Roman", serif;
 
   --text-display-xl: clamp(3.5rem, 8vw, 8rem);
   --text-display-xl--line-height: 0.95;
@@ -104,7 +106,7 @@
   color-scheme: light;
 
   /* Brand palette */
-  --paper: #f6f4f0;
+  --paper: #fcfbfa;
   --paper-2: #ece8e1;
   --surface: #ffffff;
   --ink: #1b1918;
@@ -227,5 +229,16 @@
       transition-duration: 0.01ms !important;
       scroll-behavior: auto !important;
     }
+  }
+}
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
