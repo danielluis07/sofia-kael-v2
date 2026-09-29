@@ -77,5 +77,5 @@ Clearing the Focus, turning Split off, X-ray, Slice and Isolate never move the c
 ## Consequences
 
 - The reducer, `deriveView` and the URL parse/serialize functions are the test surface. The scene has no rules of its own.
-- The Condition ↔ Structure map (DESIGN.md §9) and the cortex/deep split (ADR 0002) are inputs to `deriveView`, so they live as data in `lib/brain/` next to the node mapping.
+- The Condition ↔ Structure map (DESIGN.md §9) and the cortex/deep split (ADR 0002) are inputs to `deriveView`. The cortex/deep split lives in `lib/brain/` next to the node mapping. The map lives in `content/conditions.ts`, as each Condition's `structures` (amended by ADR 0004).
 - Mobile gesture capture ("Tap to explore" / Exit) and the bottom sheet are not decided here; they read the same store.
