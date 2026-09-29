@@ -4,7 +4,7 @@
 
 - **Reveal:** one inline script with an IntersectionObserver drives a time-based CSS transition, and nothing is hidden unless that script runs.
 - **Nav hairline:** a CSS scroll-driven animation.
-- **Portraits:** local files, statically imported.
+- **Portraits:** empty `--paper-2` frames until the AI portraits exist; later, local files, statically imported.
 - **Contact form:** Base UI `Form` and `Field` on top of native constraint validation.
 
 shadcn stays limited to `Button`.
@@ -14,6 +14,7 @@ shadcn stays limited to `Button`.
 - **CSS scroll-driven animations for the reveal** (`animation-timeline: view()`). They need no JS, but the fade is scrubbed by scroll position instead of played once. An element resting near the bottom of the viewport stays half-faded, which breaks DESIGN.md §7's "fully visible at rest", and scrolling back reverses it. Support is also uneven (Firefox).
 - **A client `<Reveal>` with IntersectionObserver in `useEffect`.** It's hydration-safe, but content in view stays hidden until hydration finishes, and every revealed block becomes a client boundary.
 - **Motion (framer-motion) for the reveal.** A large dependency for one fade.
+- **Unsplash placeholder portraits.** Real faces help judge the look, but a stranger's photo would be presented as the fictional Dr. Kael, so the site couldn't be shared until the AI portraits landed, and those are out of scope for this build. (Amended on 2026-09-29, when the build was sliced; this ADR first chose local Unsplash files.)
 - **`remotePatterns` for Unsplash.** The page would depend on images.unsplash.com at runtime (plus its redirects and the optimizer allowlist). Swapping in the AI portraits would also mean editing config as well as content.
 - **react-hook-form + zod.** Two dependencies for five fields whose data goes nowhere.
 - **Only the browser's native validation bubbles.** They can't be styled to DESIGN.md §10 (oxblood text and an icon below the field).
@@ -58,14 +59,13 @@ shadcn stays limited to `Button`.
 
 ## Portraits
 
-- **Unsplash placeholders are local files.** They are downloaded and pre-cropped (hero 4:5, About 3:4, at about twice their largest rendered width) into `content/portraits/`. `content/portraits.ts` statically imports them and exports `{ src, alt, credit }` for each portrait: `credit` records the photographer and URL for provenance and isn't rendered.
-- **A separate module:** portraits don't go in `content/site.ts`, because the client Explorer imports `SECTIONS` from it and shouldn't pull in image metadata.
-- **Placeholder tracking:** each placeholder portrait is wrapped in ADR 0004's `placeholder()`, so the remaining-placeholders test counts them. The AI portraits (DESIGN.md §11) replace the files and drop the wrapper, and no config changes.
-- **They must not ship:** the count reaches zero before the site is shared publicly, because a real person's photo would otherwise be presented as the fictional Dr. Kael.
-- **Rendering with `next/image`:**
+- **No photos until the AI portraits exist (DESIGN.md §11).** Until then, each portrait slot is an empty frame: a sharp `--paper-2` block at the portrait's crop (hero 4:5, About 3:4) with one mono `label` caption, e.g. "Portrait of Dr. Kael · forthcoming". The hero's decorative leader-line callout anchors to the frame just as it would to a photo. The site can go public like this, because nobody's face stands in for Dr. Kael.
+- **`content/portraits.ts`** exports `{ hero, about }`, each either `{ src, alt }` (a static import from `content/portraits/`) or `null`. A `Portrait` component renders the image when it's there and the frame otherwise. Portraits get their own module, not `content/site.ts`, because the client Explorer imports `SECTIONS` from `site.ts` and shouldn't pull in image metadata.
+- **The frame isn't a `placeholder()`.** It's a finished, shippable state, so the remaining-placeholders count doesn't include it. The portrait effort adds the files and fills in the two entries, and no config changes.
+- **Rendering with `next/image`** (once the files exist):
   - hero: `preload` (Next 16 replaces `priority`), `sizes="(min-width: 768px) 40vw, 100vw"`;
   - About: lazy (the default);
-  - both: `placeholder="empty"` on a `--paper-2` frame, because a blur blob doesn't suit the flat page;
+  - both: `placeholder="empty"` on the same `--paper-2` frame, because a blur blob doesn't suit the flat page;
   - no `remotePatterns`, and the default `images.qualities` (`[75]`).
 
 ## Contact form
