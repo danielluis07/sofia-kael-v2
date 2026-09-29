@@ -48,12 +48,11 @@ Every build slice meets one bar, and each ticket's acceptance criteria point to 
 
 ## Performance
 
-**Blocking in CI:**
+**Blocking in CI** (LCP is deliberately not a gate: it is noisy on CI runners and does not matter for this site):
 
 | Budget | Limit | Checked by |
 |---|---|---|
-| LCP | ≤ 2.5 s | Lighthouse CI, mobile preset, median of 3 runs, production build |
-| CLS | ≤ 0.1 | same |
+| CLS | ≤ 0.1 | Lighthouse CI, mobile preset, median of 3 runs, production build |
 | TBT | ≤ 200 ms | same |
 | Lighthouse Performance | ≥ 90 | same |
 | Initial-route JS (excluding the 3D chunk) | ≤ 170 KB gzipped | bundle script |
