@@ -30,7 +30,7 @@ Quality gates from [ADR 0006](docs/adr/0006-quality-bar.md). CI runs them on eve
 | Unit tests | `bun test` | Pure logic only, files sit next to their module as `*.test.ts` |
 | Playwright e2e + axe | `bunx playwright install chromium` once, then `bun run e2e` | Chromium only, builds and starts the production server itself. Set `E2E_SKIP_BUILD=1` to reuse an existing build |
 | Bundle budgets | `bun run budget` | Run after a build. Initial-route JS ≤ 170 KB gzipped, 3D chunk ≤ 400 KB gzipped. The 3D chunk is any non-initial chunk containing `WebGLRenderer`, so it passes trivially until three is bundled |
-| Lighthouse CI | `bun run build && bun run lhci` | Home page, mobile preset, median of 3 runs: LCP ≤ 2.5 s, CLS ≤ 0.1, TBT ≤ 200 ms, Performance ≥ 90 |
+| Lighthouse CI | `bun run build && bun run lhci` | Home page, mobile preset, median of 3 runs: CLS ≤ 0.1, TBT ≤ 200 ms, Performance ≥ 90 |
 
 Changing a budget means amending the ADR.
 

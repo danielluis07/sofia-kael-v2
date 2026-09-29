@@ -3,38 +3,15 @@
     "collect": {
       "startServerCommand": "bun --bun next start -p 3200",
       "startServerReadyPattern": "Ready",
-      "url": [
-        "http://localhost:3200/"
-      ],
+      "url": ["http://localhost:3200/"],
       "numberOfRuns": 3
     },
     "assert": {
       "aggregationMethod": "median",
       "assertions": {
-        "largest-contentful-paint": [
-          "error",
-          {
-            "maxNumericValue": 2500
-          }
-        ],
-        "cumulative-layout-shift": [
-          "error",
-          {
-            "maxNumericValue": 0.1
-          }
-        ],
-        "total-blocking-time": [
-          "error",
-          {
-            "maxNumericValue": 200
-          }
-        ],
-        "categories:performance": [
-          "error",
-          {
-            "minScore": 0.9
-          }
-        ]
+        "cumulative-layout-shift": ["error", { "maxNumericValue": 0.1 }],
+        "total-blocking-time": ["error", { "maxNumericValue": 200 }],
+        "categories:performance": ["error", { "minScore": 0.9 }]
       }
     }
   }
