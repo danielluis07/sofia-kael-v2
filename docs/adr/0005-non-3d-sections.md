@@ -1,0 +1,85 @@
+# How the non-3D sections are built
+
+`app/page.tsx` is a Server Component that renders the sections in page order, each one a Server Component in `components/sections/`. Outside the Brain Explorer there are only two client islands: the mobile nav sheet and the contact form. Everything else is server-rendered HTML that works without JS:
+
+- **Reveal:** one inline script with an IntersectionObserver drives a time-based CSS transition, and nothing is hidden unless that script runs.
+- **Nav hairline:** a CSS scroll-driven animation.
+- **Portraits:** local files, statically imported.
+- **Contact form:** Base UI `Form` and `Field` on top of native constraint validation.
+
+shadcn stays limited to `Button`.
+
+## Considered Options
+
+- **CSS scroll-driven animations for the reveal** (`animation-timeline: view()`). They need no JS, but the fade is scrubbed by scroll position instead of played once. An element resting near the bottom of the viewport stays half-faded, which breaks DESIGN.md §7's "fully visible at rest", and scrolling back reverses it. Support is also uneven (Firefox).
+- **A client `<Reveal>` with IntersectionObserver in `useEffect`.** It's hydration-safe, but content in view stays hidden until hydration finishes, and every revealed block becomes a client boundary.
+- **Motion (framer-motion) for the reveal.** A large dependency for one fade.
+- **`remotePatterns` for Unsplash.** The page would depend on images.unsplash.com at runtime (plus its redirects and the optimizer allowlist). Swapping in the AI portraits would also mean editing config as well as content.
+- **react-hook-form + zod.** Two dependencies for five fields whose data goes nowhere.
+- **Only the browser's native validation bubbles.** They can't be styled to DESIGN.md §10 (oxblood text and an icon below the field).
+- **shadcn `Sheet`, `Input`, `Textarea`, `Label`.** Their base-nova look (side panel, boxed inputs) has little in common with the full-screen sheet and bottom-border inputs, so each wrapper would be rewritten, leaving two layers of classes to fight. The Base UI primitives underneath are used directly instead.
+
+## Page composition
+
+- `app/page.tsx` renders `<SiteNav />`, then `<main>` with Hero, About, Conditions, Brain Explorer, First visit, Credentials and Contact, then `<SiteFooter />`. The current placeholder is replaced.
+- A server `Section` component draws the shared opening from DESIGN.md §4: the `--ink` rule, the eyebrow and the `display-l` headline. It takes the `id` and label from ADR 0004's `SECTIONS` where the section has one (Hero and Credentials don't), and sets `aria-labelledby` on the headline.
+- **Anchors:** sections get `scroll-margin-top: var(--nav-h)` so an anchor jump never lands under the sticky nav, and `html` gets `scroll-behavior: smooth` (the existing reduced-motion rule already turns it off).
+- **"See it in the brain →"** and the Condition chips are plain `<a href>`s in server markup (`?condition=<id>#brain-explorer`, `#condition-<id>`). The interception ADR 0003 describes is a single delegated click listener installed by the Explorer's client code, so the Conditions section stays a Server Component.
+- **Brain Explorer:** only its island is client code. Its section shell (eyebrow, headline, loading placeholder) is server-rendered.
+
+## Reveal
+
+- **Markup:** a server `<Reveal>` component renders its element with `data-reveal`, an optional `--reveal-i` stagger index, and `suppressHydrationWarning`. Only markup present at first load is marked; client-rendered content (e.g. the form's success panel) doesn't reveal.
+- **Script:** a small inline `<script>` at the end of `<body>`, rendered from the root layout, not a client component, so it doesn't wait for hydration. It runs only when `IntersectionObserver` exists and `prefers-reduced-motion` isn't `reduce`, and then it:
+  - adds `reveal` to `<html>` (which carries `suppressHydrationWarning`);
+  - observes every `[data-reveal]`;
+  - on first intersection, sets `data-revealed` on the element and unobserves it. Each element reveals once.
+- **CSS:**
+
+  ```css
+  .reveal [data-reveal]:not([data-revealed]) { opacity: 0; transform: translateY(12px); }
+  [data-reveal] {
+    transition: opacity var(--dur-slow) var(--ease-out), transform var(--dur-slow) var(--ease-out);
+    transition-delay: calc(min(var(--reveal-i, 0), 5) * 60ms);
+  }
+  @media print { .reveal [data-reveal] { opacity: 1; transform: none; } }
+  ```
+
+- **Without the script** (no JS, reduced motion, script error), nothing is ever hidden.
+- **The hero** uses the same mechanism. The observer fires on the first frame, so it plays as the entrance, and the `rise-in` keyframe's one-off use in the placeholder goes away.
+
+## Navigation
+
+- **`SiteNav`** is a Server Component: the wordmark, the `SECTIONS` links and the "Book a consultation" pill (a `#contact` link styled with `buttonVariants`). It is `sticky top-0` on `--paper`, and its height is published as `--nav-h`.
+- **The hairline** is pure CSS. The border is `--rule` by default, and under `@supports (animation-timeline: scroll())` a scroll-driven animation fades it in over the first 16px of scroll. Where scroll-driven animations aren't supported, the hairline is simply always on. The global reduced-motion override (`animation-duration: 0.01ms !important`) must not apply to it: the hairline is a state, not motion.
+- **The mobile sheet** is the only client part of the nav: `MobileNavSheet`, a Base UI `Dialog` shown below `md`. A text "Menu" button opens a full-screen `--paper` popup with the `SECTIONS` links in the serif at `display-m` and the consultation pill. Base UI provides the focus trap, scroll lock, Esc and focus return.
+- **A link in the sheet** closes the dialog first. Once the close completes (`onOpenChangeComplete`), the code sets the hash, so the scroll lock is released before the jump, and moves keyboard focus to the target section's headline.
+- **Without JS**, the Menu button does nothing. Mobile Visitors navigate with the footer's anchor links (DESIGN.md §8), which are always present.
+
+## Portraits
+
+- **Unsplash placeholders are local files.** They are downloaded and pre-cropped (hero 4:5, About 3:4, at about twice their largest rendered width) into `content/portraits/`. `content/portraits.ts` statically imports them and exports `{ src, alt, credit }` for each portrait: `credit` records the photographer and URL for provenance and isn't rendered.
+- **A separate module:** portraits don't go in `content/site.ts`, because the client Explorer imports `SECTIONS` from it and shouldn't pull in image metadata.
+- **Placeholder tracking:** each placeholder portrait is wrapped in ADR 0004's `placeholder()`, so the remaining-placeholders test counts them. The AI portraits (DESIGN.md §11) replace the files and drop the wrapper, and no config changes.
+- **They must not ship:** the count reaches zero before the site is shared publicly, because a real person's photo would otherwise be presented as the fictional Dr. Kael.
+- **Rendering with `next/image`:**
+  - hero: `preload` (Next 16 replaces `priority`), `sizes="(min-width: 768px) 40vw, 100vw"`;
+  - About: lazy (the default);
+  - both: `placeholder="empty"` on a `--paper-2` frame, because a blur blob doesn't suit the flat page;
+  - no `remotePatterns`, and the default `images.qualities` (`[75]`).
+
+## Contact form
+
+- **Split:** `components/sections/contact.tsx` (server) renders the address, hours and phone from `content/site.ts`, next to `ContactForm`, a client component.
+- **Fields:** name, email, phone (optional), reason for visit, and preferred time. Validation uses native attributes (`required`, `type="email"`, `type="tel"` with a `pattern`, `maxLength`) read through Base UI `Field`. Each field shows `Field.Error match="valueMissing" | "typeMismatch" | "patternMismatch"`, in `--oxblood` with a lucide icon. The error copy lives in `content/site.ts`. Base UI wires up `aria-invalid` and `aria-describedby`.
+- **Preferred time** is a Base UI `Fieldset` of native radios (Morning / Afternoon / No preference), preselected to No preference, so it never errors.
+- **Timing** is Base UI's default `validationMode="onSubmit"`: validate on submit, then re-validate on change. On a failed submit, keyboard focus goes to the first invalid field.
+- **On success**, the form is replaced by the `--surface` panel with `role="status"`, and keyboard focus moves to it. Nothing is sent or stored, and the values are dropped.
+- **No-JS submit:** Base UI `Form` always sets `noValidate`, so there is no validation without JS. The form's `action` is a client function, which React server-renders as an inert action: a no-JS submit does nothing and never puts the Visitor's name or phone into a URL. The form never gets a real `action` URL.
+
+## Consequences
+
+- **Client islands outside the Brain Explorer:** `MobileNavSheet` and `ContactForm`, plus the inline reveal script. A new `"use client"` elsewhere needs a reason.
+- **New dependencies:** none. Base UI is already installed, and shadcn stays limited to `Button`. A shadcn component is added only when its default look is already close to DESIGN.md; the Explorer's tool rail and chips decide that for themselves.
+- **Testing:** these sections have no pure logic, so there's nothing new for `bun test` beyond the placeholder count. They are checked in the browser: with JS disabled (everything visible, and a form submit does nothing), with reduced motion on, at mobile width (sheet focus and the jump after close), and keyboard-only through the form.
+- **Unchanged:** the Brain Explorer's mobile bottom sheet (Base UI also ships a `Drawer`) and its lazy loading belong to the Explorer's own work.
