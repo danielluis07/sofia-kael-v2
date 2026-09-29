@@ -39,3 +39,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# PROTOTYPE (issue #6): fetched by scripts/prototype-specimen-setup.ts
+/public/prototype/
