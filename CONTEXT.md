@@ -46,6 +46,16 @@ _Avoid_: open, halve
 The Brain Explorer tool that makes the cortex translucent so deep Structures show through.
 _Avoid_: transparency, ghost mode
 
+**Focus**:
+The one Structure or Condition the Brain Explorer is currently centred on, set by selecting a Structure or by "See it in the brain". There is at most one Focus; a Condition focus is the only way several Structures are highlighted at once. Always write "keyboard focus" for the DOM sense.
+_Avoid_: selection (for a Condition), active item
+
 **Isolate**:
-Focusing a single Structure so every other Structure fades away.
-_Avoid_: solo, focus, highlight
+The Brain Explorer tool that fades every Structure outside the Focus to ghost. It only takes effect while there is a Focus.
+_Avoid_: solo, highlight
+
+**Structure panel**:
+The side panel (bottom sheet on mobile) describing the focused Structure: its names, what it does, and the Conditions Dr. Kael treats there.
+
+**Condition panel**:
+The same panel when a Condition is the Focus: its name, a short description, and its Structures as selectable rows, with a "Clear" link.
