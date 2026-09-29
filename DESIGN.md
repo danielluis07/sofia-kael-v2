@@ -299,5 +299,6 @@ Tools can combine, e.g. X-ray + Isolate, or Slice while Split.
 ## 13. Implementation notes
 
 - Map the tokens into `app/globals.css`. Point shadcn's semantic tokens at them: `--background: paper`, `--foreground: ink`, `--primary: oxblood`, `--primary-foreground: paper`, `--border` and `--input: rule`, `--ring: oxblood`, `--card` and `--popover: surface`, `--muted: paper-2`, `--muted-foreground: ink-soft`, `--radius: 0`.
-- Remove the `.dark` block and the `dark` custom variant.
-- Fonts: `Instrument_Serif`, `Geist` and `Geist_Mono` from `next/font/google`, exposed as `--font-serif`, `--font-sans` and `--font-mono`.
+- Remove the `.dark` token block, but **keep** `@custom-variant dark (&:is(.dark *))`. The `.dark` class is never set, so shadcn's `dark:` utilities never match. Without that line, Tailwind would fall back to `prefers-color-scheme` and apply them on dark-mode systems.
+- Fonts: `Instrument_Serif`, `Geist` and `Geist_Mono` from `next/font/google`, exposed as Tailwind's `font-serif` / `font-heading`, `font-sans` and `font-mono`.
+- Utilities: `text-display-xl|l|m`, `text-body-l|body|body-s`, `label`, `latin`, `gutter`, `section-y`, `max-w-content`, and brand colors such as `bg-paper`, `text-ink-soft` and `text-oxblood`.

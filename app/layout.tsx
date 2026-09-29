@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { cn } from "@/lib/utils";
-import { geistMono, geistSans, inter } from "@/fonts";
+import { geistMono, geistSans, instrumentSerif } from "@/fonts";
 
 export const metadata: Metadata = {
   title: "Create Next App",
@@ -16,7 +16,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         "h-full antialiased font-sans",
         geistSans.variable,
         geistMono.variable,
-        inter.variable,
+        instrumentSerif.variable,
       )}>
       <body className="min-h-full flex flex-col">{children}</body>
     </html>
