@@ -31,7 +31,7 @@ The dedicated section of the page where the Visitor freely rotates, opens and lo
 _Avoid_: brain viewer, 3D section, model
 
 **Structure**:
-A named anatomical part of the brain the Visitor can select in the Brain Explorer (e.g. hippocampus, cerebellum, frontal lobe).
+A named anatomical part of the brain the Visitor can select in the Brain Explorer (e.g. hippocampus, cerebellum, frontal lobe). Always bilateral: it has a left and a right side, and selecting it highlights both. Structures never overlap: the Frontal lobe means the frontal lobe without the Precentral gyrus, which is its own Structure.
 _Avoid_: region, part, mesh, node
 
 **Slice**:
