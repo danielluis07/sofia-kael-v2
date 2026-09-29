@@ -8,6 +8,16 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 <!-- END:nextjs-agent-rules -->
 
+# What this project is
+
+**Kael Neurology** is the single-page website of Dr. Sofia Kael, a *fictional* general clinical neurologist in Boston. It's built to read as a credible real practice while being a portfolio-grade showcase. Its centerpiece is the **Brain Explorer**: a dedicated section with an interactive 3D human brain the Visitor can rotate, Split, X-ray, Isolate and Slice. Selecting a Structure explains what it does and which Conditions Dr. Kael treats there.
+
+- `CONTEXT.md`: the domain glossary. Use its terms (Visitor, Structure, Condition, Slice…) in code and copy.
+- `DESIGN.md`: the complete style guide. Follow it for any UI work.
+- `docs/adr/`: recorded decisions (e.g. the brain model and its license).
+
+The site is fictional. Never remove the footer disclaimer or the model attribution.
+
 # Runtime
 
 Use Bun
