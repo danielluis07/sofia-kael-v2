@@ -1,6 +1,6 @@
 # Quality bar
 
-Every build slice meets one bar, and each ticket's acceptance criteria point to it: "Definition of done: ADR 0005", followed by the slice's own criteria (the reducer rules it unit-tests, the flows it adds to e2e, and the DESIGN.md §9 accessibility items it covers). The machine-checkable parts run in GitHub Actions as required statuses on every PR. The parts that need a human (how it looks, frame rate, screen readers) go in the PR description, driven by a PR template.
+Every build slice meets one bar, and each ticket's acceptance criteria point to it: "Definition of done: ADR 0006", followed by the slice's own criteria (the reducer rules it unit-tests, the flows it adds to e2e, and the DESIGN.md §9 accessibility items it covers). The machine-checkable parts run in GitHub Actions as required statuses on every PR. The parts that need a human (how it looks, frame rate, screen readers) go in the PR description, driven by a PR template.
 
 ## Considered Options
 
