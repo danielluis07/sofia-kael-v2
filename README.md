@@ -20,6 +20,20 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
+## Checks
+
+Quality gates from [ADR 0006](docs/adr/0006-quality-bar.md). CI runs them on every PR and on `main`.
+
+| Gate | Command | Notes |
+|---|---|---|
+| Everything except e2e and Lighthouse | `bun run check` | `tsc --noEmit`, `eslint`, `bun test`, then `next build` |
+| Unit tests | `bun test` | Pure logic only, files sit next to their module as `*.test.ts` |
+| Playwright e2e + axe | `bunx playwright install chromium` once, then `bun run e2e` | Chromium only, builds and starts the production server itself. Set `E2E_SKIP_BUILD=1` to reuse an existing build |
+| Bundle budgets | `bun run budget` | Run after a build. Initial-route JS ≤ 170 KB gzipped, 3D chunk ≤ 400 KB gzipped. The 3D chunk is any non-initial chunk containing `WebGLRenderer`, so it passes trivially until three is bundled |
+| Lighthouse CI | `bun run build && bun run lhci` | Home page, mobile preset, median of 3 runs: LCP ≤ 2.5 s, CLS ≤ 0.1, TBT ≤ 200 ms, Performance ≥ 90 |
+
+Changing a budget means amending the ADR.
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:
