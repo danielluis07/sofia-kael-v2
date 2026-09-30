@@ -1,7 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // three ships untranspiled ESM (#2).
+  transpilePackages: ["three"],
 };
 
 export default nextConfig;

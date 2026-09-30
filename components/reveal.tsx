@@ -1,4 +1,4 @@
-import type { ComponentPropsWithoutRef, CSSProperties, ElementType } from "react";
+import type { ComponentPropsWithoutRef, CSSProperties, ElementType, HTMLAttributes } from "react";
 
 type RevealProps<T extends ElementType> = {
   as?: T;
@@ -12,9 +12,17 @@ type RevealProps<T extends ElementType> = {
  * `data-revealed` before hydration, hence `suppressHydrationWarning`.
  */
 export function Reveal<T extends ElementType = "div">({ as, index, style, ...props }: RevealProps<T>) {
-  const Component: ElementType = as ?? "div";
+  // R3F adds three.js elements to JSX, so the props of any `ElementType` collapse to `never`: render as plain HTML.
+  const Component = (as ?? "div") as ElementType<HTMLAttributes<HTMLElement>>;
   const stagger = index ? ({ "--reveal-i": index } as CSSProperties) : undefined;
-  return <Component data-reveal="" suppressHydrationWarning style={{ ...stagger, ...style }} {...props} />;
+  return (
+    <Component
+      data-reveal=""
+      suppressHydrationWarning
+      style={{ ...stagger, ...style }}
+      {...(props as HTMLAttributes<HTMLElement>)}
+    />
+  );
 }
 
 // Observe first, add `.reveal` last: if anything throws, nothing is hidden.
