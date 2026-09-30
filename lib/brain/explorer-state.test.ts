@@ -424,6 +424,50 @@ describe("deriveView rule 3: X-ray", () => {
   });
 });
 
+describe("toggleSplit", () => {
+  test("toggles, and counts as an interaction", () => {
+    const on = run({ type: "toggleSplit" });
+    expect(on.split).toBe(true);
+    expect(on.touched).toBe(true);
+    expect(explorerReducer(on, { type: "toggleSplit" }).split).toBe(false);
+  });
+
+  test("turning it on requests the medial view, without a Focus and with one", () => {
+    expect(run({ type: "toggleSplit" }).camera).toEqual({ intent: "medial", seq: 1 });
+    const focused = run({ type: "select", id: "corpus-callosum" });
+    const state = explorerReducer(focused, { type: "toggleSplit" });
+    expect(state.camera).toEqual({ intent: "medial", seq: focused.camera.seq + 1 });
+    expect(state.focus).toEqual(focused.focus);
+  });
+
+  test("turning it off never moves the camera", () => {
+    const on = run({ type: "toggleSplit" });
+    expect(explorerReducer(on, { type: "toggleSplit" }).camera).toBe(on.camera);
+  });
+
+  test("a Focus set while split frames its Structures, and the latest request wins", () => {
+    const state = run({ type: "toggleSplit" }, { type: "focusCondition", id: "migraine" });
+    expect(state.split).toBe(true);
+    expect(deriveView(state).camera).toEqual({ intent: "frame", seq: 2, frame: ["occipital-lobe", "thalamus", "pons"] });
+  });
+
+  test("combines with X-ray, Isolate and a Focus without changing their looks", () => {
+    const whole = run({ type: "select", id: "thalamus" }, { type: "toggleIsolate" }, { type: "toggleXray" });
+    const split = explorerReducer(whole, { type: "toggleSplit" });
+    expect(split).toEqual({ ...whole, split: true, camera: { intent: "medial", seq: whole.camera.seq + 1 } });
+    expect(deriveView(split).structures).toEqual(deriveView(whole).structures);
+  });
+
+  test("survives clearing the Focus; Reset turns it off and eases home", () => {
+    const state = run({ type: "select", id: "pons" }, { type: "toggleSplit" }, { type: "clearFocus" });
+    expect(state.split).toBe(true);
+    expect(state.camera.intent).toBe("medial");
+    const reset = explorerReducer(state, { type: "reset" });
+    expect(reset.split).toBe(false);
+    expect(reset.camera).toEqual({ intent: "home", seq: state.camera.seq + 1 });
+  });
+});
+
 describe("calloutStructure", () => {
   test("names the hovered Structure", () => {
     expect(calloutStructure(initialExplorerState)).toBeNull();

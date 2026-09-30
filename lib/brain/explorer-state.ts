@@ -60,6 +60,8 @@ export type ExplorerAction =
   | { type: "toggleIsolate" }
   /** The rail's X-ray. */
   | { type: "toggleXray" }
+  /** The rail's Split. */
+  | { type: "toggleSplit" }
   /** The rail's Reset: everything back to the initial state, except `touched`. */
   | { type: "reset" }
   /** Back or Forward landed on a history entry: its Focus and Isolate come back. */
@@ -104,6 +106,11 @@ export function explorerReducer(state: ExplorerState, action: ExplorerAction): E
     case "toggleXray":
       // Never moves the camera, and needs no Focus.
       return { ...state, xray: !state.xray, touched: true };
+    case "toggleSplit":
+      // Turning it on swings to the medial view; turning it off leaves the camera where it is.
+      return state.split
+        ? { ...state, split: false, touched: true }
+        : { ...state, split: true, camera: move(state, "medial"), touched: true };
     case "reset":
       // The hover belongs to the pointer, not to a tool.
       return { ...initialExplorerState, hovered: state.hovered, camera: move(state, "home"), touched: true };

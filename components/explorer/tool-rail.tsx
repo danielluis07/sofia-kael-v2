@@ -1,6 +1,6 @@
 "use client";
 
-import { Focus, RotateCcw, ScanEye, type LucideIcon } from "lucide-react";
+import { Focus, RotateCcw, ScanEye, UnfoldHorizontal, type LucideIcon } from "lucide-react";
 import { useExplorer, useExplorerDispatch } from "@/components/explorer/explorer-store";
 import { EXPLORER } from "@/content/site";
 import { cn } from "@/lib/utils";
@@ -8,14 +8,23 @@ import { cn } from "@/lib/utils";
 /**
  * The tool rail (DESIGN.md §9 "Tools"): bottom centre, a hairline-bordered
  * `--surface` bar of real buttons, each a 20px lucide icon and a mono label.
- * Toggles carry `aria-pressed`. Slice and Split arrive with their tools.
+ * Toggles carry `aria-pressed`. Slice arrives with its tool.
  */
 export function ToolRail({ className }: { className?: string }) {
+  const split = useExplorer((state) => state.split);
   const xray = useExplorer((state) => state.xray);
   const dispatch = useExplorerDispatch();
   return (
     <div role="group" aria-label={EXPLORER.toolsLabel} className={cn("flex border border-rule bg-surface", className)}>
-      <ToolButton icon={ScanEye} rail pressed={xray} onClick={() => dispatch({ type: "toggleXray" })}>
+      <ToolButton icon={UnfoldHorizontal} rail pressed={split} onClick={() => dispatch({ type: "toggleSplit" })}>
+        {EXPLORER.tools.split}
+      </ToolButton>
+      <ToolButton
+        icon={ScanEye}
+        rail
+        pressed={xray}
+        onClick={() => dispatch({ type: "toggleXray" })}
+        className="border-l border-rule">
         {EXPLORER.tools.xray}
       </ToolButton>
       <IsolateToggle rail className="border-l border-rule" />

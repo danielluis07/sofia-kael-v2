@@ -48,3 +48,22 @@ export function frameDistance(radius: number, aspect: number, home: number): num
 
 /** `--dur-camera` (DESIGN.md §7): every camera move eases over it, or cuts under reduced motion. */
 export const CAMERA_MS = 900;
+
+/** How far each hemisphere slides off the midline on Split, metres: the gap lets the medial view see past the near one. */
+export const SPLIT_M = 0.045;
+
+/** The medial view's angle off straight ahead, toward the Visitor's side, and above, degrees. */
+const MEDIAL_AZIMUTH = 42;
+const MEDIAL_ELEVATION = 8;
+
+/**
+ * The medial view (Split): from the front, turned toward the `near` side (the
+ * side the camera was on), looking through the gap at the far half's medial
+ * surface. Unit length; +X is the brain's left.
+ */
+export function medialDirection(near: "left" | "right"): [number, number, number] {
+  const azimuth = (MEDIAL_AZIMUTH * Math.PI) / 180;
+  const elevation = (MEDIAL_ELEVATION * Math.PI) / 180;
+  const x = Math.sin(azimuth) * Math.cos(elevation);
+  return [near === "left" ? x : -x, Math.sin(elevation), Math.cos(azimuth) * Math.cos(elevation)];
+}
