@@ -84,9 +84,12 @@ export function StructureIndex({ className }: { className?: string }) {
   );
 }
 
-/** Puts keyboard focus back on the index after the panel closes: on `id`'s row, or the toggle if the list is collapsed. */
-export function focusStructureIndex(root: ParentNode, id: StructureId) {
-  const row = root.querySelector<HTMLElement>(`[data-structure="${id}"]`);
+/**
+ * Puts keyboard focus back on the index after the panel closes: on `id`'s row
+ * (the row the index would Tab to, for a Condition), or the toggle if the list is collapsed.
+ */
+export function focusStructureIndex(root: ParentNode, id: StructureId | null) {
+  const row = root.querySelector<HTMLElement>(id ? `[data-structure="${id}"]` : `[data-structure][tabindex="0"]`);
   if (row?.checkVisibility()) row.focus();
   else root.querySelector<HTMLElement>("[data-structure-index-toggle]")?.focus();
 }

@@ -69,6 +69,8 @@ export type ExplorerContent = SectionContent & {
   conditionsLabel: string;
   structuresLabel: string;
   clear: string;
+  backTo: string;
+  toolsLabel: string;
   tools: { rotate: string; slice: string; split: string; xray: string; isolate: string; reset: string };
   slice: { sagittal: string; coronal: string; axial: string; position: string };
 };
@@ -88,6 +90,8 @@ export const EXPLORER = {
   conditionsLabel: "Conditions Dr. Kael treats here",
   structuresLabel: "Structures",
   clear: "Clear",
+  backTo: "Back to",
+  toolsLabel: "Tools",
   tools: { rotate: "Rotate", slice: "Slice", split: "Split", xray: "X-ray", isolate: "Isolate", reset: "Reset" },
   slice: {
     sagittal: "Sagittal (left and right)",

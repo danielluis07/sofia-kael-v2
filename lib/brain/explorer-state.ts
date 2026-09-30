@@ -1,6 +1,6 @@
 // The Brain Explorer's whole state model (ADR 0003): one pure reducer the tool
 // rail, the panel, the Structure index and the scene all read through the store.
-import { CONDITIONS, type ConditionId } from "@/content/conditions";
+import { conditionById, type ConditionId } from "@/content/conditions";
 import { STRUCTURE_IDS, type StructureId } from "@/lib/brain/structures";
 
 export type Focus =
@@ -46,10 +46,22 @@ export type ExplorerAction =
   | { type: "hover"; id: StructureId | null }
   /** A hover source left `id`: clears the hover only if no other source has taken it since. */
   | { type: "unhover"; id: StructureId }
-  /** A canvas click or tap, the Structure index, or a `?structure=` deep link. */
+  /**
+   * A canvas click or tap, the Structure index, a Condition panel row, or a
+   * `?structure=` deep link. A Structure of the Condition it's reached through
+   * keeps that Condition as `via`.
+   */
   | { type: "select"; id: StructureId }
+  /** "See it in the brain →", a `?condition=` deep link, or the Structure panel's "← <Condition>". */
+  | { type: "focusCondition"; id: ConditionId }
   /** Esc, the panel's close control, or the Condition panel's "Clear". */
-  | { type: "clearFocus" };
+  | { type: "clearFocus" }
+  /** The rail's or the Structure panel's Isolate. Does nothing without a Focus. */
+  | { type: "toggleIsolate" }
+  /** The rail's Reset: everything back to the initial state, except `touched`. */
+  | { type: "reset" }
+  /** Back or Forward landed on a history entry: its Focus and Isolate come back. */
+  | { type: "restore"; focus: Focus; isolate: boolean };
 
 /** Returns `state` itself when nothing changed, so the store can skip notifying. */
 export function explorerReducer(state: ExplorerState, action: ExplorerAction): ExplorerState {
@@ -61,11 +73,22 @@ export function explorerReducer(state: ExplorerState, action: ExplorerAction): E
       return state.hovered === action.id ? state : { ...state, hovered: action.id };
     case "unhover":
       return state.hovered === action.id ? { ...state, hovered: null } : state;
-    case "select":
-      // Selecting again re-frames: the Visitor may have orbited away.
+    case "select": {
+      // Isolate carries over to the new Focus. Selecting again re-frames: the Visitor may have orbited away.
+      const via = viaFor(state.focus, action.id);
       return {
         ...state,
-        focus: { kind: "structure", id: action.id },
+        focus: via ? { kind: "structure", id: action.id, via } : { kind: "structure", id: action.id },
+        camera: move(state, "frame"),
+        touched: true,
+      };
+    }
+    case "focusCondition":
+      // Arriving at a Condition isolates its Structures.
+      return {
+        ...state,
+        focus: { kind: "condition", id: action.id },
+        isolate: true,
         camera: move(state, "frame"),
         touched: true,
       };
@@ -74,6 +97,24 @@ export function explorerReducer(state: ExplorerState, action: ExplorerAction): E
       return state.focus.kind === "none" && !state.isolate
         ? state
         : { ...state, focus: { kind: "none" }, isolate: false };
+    case "toggleIsolate":
+      return state.focus.kind === "none" ? state : { ...state, isolate: !state.isolate, touched: true };
+    case "reset":
+      // The hover belongs to the pointer, not to a tool.
+      return { ...initialExplorerState, hovered: state.hovered, camera: move(state, "home"), touched: true };
+    case "restore": {
+      if (action.focus.kind === "none") return explorerReducer(state, { type: "clearFocus" });
+      const same = sameFocus(state.focus, action.focus);
+      if (same && state.isolate === action.isolate) return state;
+      return {
+        ...state,
+        focus: action.focus,
+        isolate: action.isolate,
+        // Only a Focus that changed moves the camera.
+        camera: same ? state.camera : move(state, "frame"),
+        touched: true,
+      };
+    }
   }
 }
 
@@ -85,6 +126,23 @@ function move(state: ExplorerState, intent: CameraIntent): ExplorerState["camera
   return { intent, seq: state.camera.seq + 1 };
 }
 
+/**
+ * The Condition a newly selected Structure is reached through: the Condition
+ * focus, or the focused Structure's own `via`, as long as the new Structure is
+ * one of that Condition's.
+ */
+function viaFor(focus: Focus, id: StructureId): ConditionId | undefined {
+  const condition = focus.kind === "condition" ? focus.id : focus.kind === "structure" ? focus.via : undefined;
+  if (!condition) return undefined;
+  return (conditionById(condition).structures as readonly StructureId[]).includes(id) ? condition : undefined;
+}
+
+export function sameFocus(a: Focus, b: Focus): boolean {
+  if (a.kind === "none" || b.kind === "none") return a.kind === b.kind;
+  if (a.kind === "structure" && b.kind === "structure") return a.id === b.id && a.via === b.via;
+  return a.kind === b.kind && a.id === b.id;
+}
+
 /** The Structures the Focus highlights: the selected one, or the Condition's. */
 export function focusedStructures(focus: Focus): readonly StructureId[] {
   switch (focus.kind) {
@@ -93,12 +151,12 @@ export function focusedStructures(focus: Focus): readonly StructureId[] {
     case "structure":
       return [focus.id];
     case "condition":
-      return CONDITIONS.find((condition) => condition.id === focus.id)?.structures ?? [];
+      return conditionById(focus.id).structures;
   }
 }
 
 /** The look of a Structure-side, named after its DESIGN.md §2 token. */
-export type Look = "oxblood" | "porcelain";
+export type Look = "oxblood" | "porcelain" | "ghost";
 
 export type StructureView = {
   look: Look;
@@ -116,18 +174,33 @@ export type ExplorerView = {
 };
 
 const FOCUSED: StructureView = { look: "oxblood", cap: true, pickable: true };
+const GHOST: StructureView = { look: "ghost", cap: false, pickable: false };
 const PORCELAIN: StructureView = { look: "porcelain", cap: true, pickable: true };
 
 /**
  * What the scene renders (ADR 0003 "deriveView"). The first matching rule wins:
  * 1. in the Focus: oxblood, capped, pickable;
+ * 2. Isolate is on: ghost, uncapped, not pickable;
  * 4. otherwise: porcelain, capped, pickable.
- * Rules 2 (Isolate) and 3 (X-ray) arrive with their tools.
+ * Rule 3 (X-ray) arrives with its tool.
  */
 export function deriveView(state: ExplorerState): ExplorerView {
   const focused = focusedStructures(state.focus);
   const structures = Object.fromEntries(
-    STRUCTURE_IDS.map((id) => [id, focused.includes(id) ? FOCUSED : PORCELAIN]),
+    STRUCTURE_IDS.map((id) => [id, structureView(state, focused, id)]),
   ) as Record<StructureId, StructureView>;
   return { structures, camera: { ...state.camera, frame: focused } };
+}
+
+function structureView(state: ExplorerState, focused: readonly StructureId[], id: StructureId): StructureView {
+  if (focused.includes(id)) return FOCUSED;
+  // Isolate only takes effect while there is a Focus.
+  if (state.isolate && focused.length > 0) return GHOST;
+  return PORCELAIN;
+}
+
+/** The Structure the hover callout names: the hovered one, unless it isn't pickable (a ghost never gets one). */
+export function calloutStructure(state: ExplorerState): StructureId | null {
+  const { hovered } = state;
+  return hovered && structureView(state, focusedStructures(state.focus), hovered).pickable ? hovered : null;
 }
