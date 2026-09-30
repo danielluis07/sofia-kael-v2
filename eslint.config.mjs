@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Vendored Draco decoder, copied from three (lib/brain/specimen.test.ts checks it).
+    "public/draco/**",
   ]),
 ]);
 
