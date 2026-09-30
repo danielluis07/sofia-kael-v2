@@ -1,11 +1,16 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { Component, useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
+import { Component, useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import type { Gesture } from "@/components/explorer/brain-stage";
 import { useExplorer, useExplorerDispatch } from "@/components/explorer/explorer-store";
 import { SpecimenOutline } from "@/components/explorer/specimen-outline";
+import { StructureCallout, type CalloutHandle } from "@/components/explorer/structure-callout";
+import { StructureIndex } from "@/components/explorer/structure-index";
+import { StructurePanel } from "@/components/explorer/structure-panel";
+import { useMediaQuery, useReducedMotion } from "@/components/explorer/use-media-query";
 import { EXPLORER } from "@/content/site";
+import { CAMERA_MS } from "@/lib/brain/framing";
 import { cn } from "@/lib/utils";
 
 // `ssr: false` code-splits only from a client file (#2), which keeps the 3D chunk out of the initial route.
@@ -14,13 +19,19 @@ const BrainStage = dynamic(() => import("@/components/explorer/brain-stage"), { 
 /** idle: not near yet · loading: fetching the GLB · ready: first frame on screen · fallback: no WebGL2 or the load failed. */
 type Phase = "idle" | "loading" | "ready" | "fallback";
 
+/** The Structure panel's width where it docks beside the specimen (DESIGN.md §9: 360–400px); narrower stages get it full width. */
+const PANEL_W = 380;
+const PANEL_DOCKED = "(min-width: 64rem)";
+
 /** How far ahead of the viewport the scene starts loading. */
 const LOAD_AHEAD = "100% 0px";
 
 /**
  * The live part of the stage: the specimen, its loading line drawing and
- * readout, and the first-use hint. Without WebGL2, or if the GLB fails, it
- * stays on the line drawing and says how to explore instead (ADR 0006).
+ * readout, the first-use hint, the callout, the Structure index and the
+ * Structure panel. Without WebGL2, or if the GLB fails, it stays on the line
+ * drawing and says how to explore instead; the index and the panel work as
+ * text either way (ADR 0006).
  */
 export function ExplorerStage() {
   const stageRef = useRef<HTMLDivElement>(null);
@@ -30,7 +41,11 @@ export function ExplorerStage() {
   const touched = useExplorer((state) => state.touched);
   const dispatch = useExplorerDispatch();
   const reducedMotion = useReducedMotion();
+  const callout = useRef<CalloutHandle>(null);
+  const panelOpen = useExplorer((state) => state.focus.kind === "structure");
+  const panelDocked = useMediaQuery(PANEL_DOCKED, true);
   const idle = !touched && !reducedMotion;
+  const cameraMs = reducedMotion ? 0 : CAMERA_MS;
 
   useEffect(() => {
     const stage = stageRef.current;
@@ -76,14 +91,20 @@ export function ExplorerStage() {
   const fail = () => setPhase("fallback");
 
   return (
-    <div ref={stageRef} data-specimen={phase} data-idle={idle ? "rotating" : "still"} className="absolute inset-0">
+    <div
+      ref={stageRef}
+      data-specimen={phase}
+      data-idle={idle ? "rotating" : "still"}
+      data-camera-ms={cameraMs}
+      style={{ "--panel-w": `${PANEL_W}px` } as CSSProperties}
+      className="absolute inset-0">
       <div
         aria-hidden
         className={cn(
           "pointer-events-none absolute inset-0 grid place-items-center transition-opacity duration-(--dur-slow)",
           ready && "opacity-0",
         )}>
-        <SpecimenOutline className="w-[min(80%,34rem)]" />
+        <SpecimenOutline data-testid="specimen-outline" className="w-[min(80%,34rem)]" />
       </div>
 
       <div role="img" aria-label={EXPLORER.canvasDescription} className="absolute inset-0">
@@ -98,6 +119,9 @@ export function ExplorerStage() {
               <BrainStage
                 active={onScreen}
                 idle={idle}
+                cameraMs={cameraMs}
+                insetRight={panelOpen && panelDocked ? PANEL_W : 0}
+                callout={callout}
                 onProgress={setPercent}
                 onReady={() => setPhase("ready")}
                 onFail={fail}
@@ -121,6 +145,15 @@ export function ExplorerStage() {
       </div>
 
       <FirstUseHint shown={ready && !touched} />
+
+      <StructureCallout ref={callout} />
+      <StructureIndex
+        className={cn(
+          "absolute top-12 right-(--gutter) max-h-[calc(100%-9rem)] transition-[right] duration-(--dur-base) ease-out md:top-16",
+          panelOpen && "lg:right-[calc(var(--panel-w)+1.5rem)]",
+        )}
+      />
+      <StructurePanel />
     </div>
   );
 }
@@ -168,16 +201,3 @@ function supportsWebGL2(): boolean {
   }
 }
 
-const REDUCED_MOTION = "(prefers-reduced-motion: reduce)";
-
-function useReducedMotion(): boolean {
-  return useSyncExternalStore(
-    (onChange) => {
-      const query = matchMedia(REDUCED_MOTION);
-      query.addEventListener("change", onChange);
-      return () => query.removeEventListener("change", onChange);
-    },
-    () => matchMedia(REDUCED_MOTION).matches,
-    () => false,
-  );
-}
