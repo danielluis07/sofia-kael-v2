@@ -18,9 +18,9 @@ const RING = 4;
 /** Room between the caption and the line's end, and the shortest horizontal run. */
 const GAP = 8;
 const MIN_RUN = 16;
-/** The caption keeps clear of the section headline above and the hint below. */
+/** The caption keeps clear of the section headline above, and of the hint and the tool rail below. */
 const CLEAR_BELOW_TITLE = 24;
-const CLEAR_ABOVE_BOTTOM = 96;
+const CLEAR_ABOVE_BOTTOM = 136;
 
 type Metrics = { width: number; height: number; gutter: number; caption: number; minY: number };
 

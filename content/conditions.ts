@@ -90,3 +90,16 @@ export function conditionsForStructure(id: StructureId): readonly Condition[] {
     (condition.structures as readonly StructureId[]).includes(id),
   );
 }
+
+export function isConditionId(value: string): value is ConditionId {
+  return CONDITIONS.some((condition) => condition.id === value);
+}
+
+export function conditionById(id: ConditionId): Condition {
+  return CONDITIONS.find((condition) => condition.id === id)!;
+}
+
+/** The `id` of a Condition's row in the Conditions section, the target of its chips. */
+export function conditionRowId(id: ConditionId) {
+  return `condition-${id}` as const;
+}

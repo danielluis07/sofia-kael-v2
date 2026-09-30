@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { STRUCTURE_IDS } from "./structures";
 import {
+  calloutStructure,
   deriveView,
   explorerReducer,
   focusedStructures,
@@ -177,5 +178,192 @@ describe("deriveView", () => {
 
   test("hover changes no look", () => {
     expect(deriveView(run({ type: "hover", id: "pons" })).structures).toEqual(deriveView(initialExplorerState).structures);
+  });
+});
+
+describe("focusCondition", () => {
+  test("focuses the Condition, turns Isolate on and frames its Structures", () => {
+    const state = run({ type: "focusCondition", id: "migraine" });
+    expect(state.focus).toEqual({ kind: "condition", id: "migraine" });
+    expect(state.isolate).toBe(true);
+    expect(state.camera).toEqual({ intent: "frame", seq: 1 });
+    expect(state.touched).toBe(true);
+  });
+
+  test("replaces a Structure focus: Focus is exclusive", () => {
+    const state = run({ type: "select", id: "insula" }, { type: "focusCondition", id: "ataxia" });
+    expect(state.focus).toEqual({ kind: "condition", id: "ataxia" });
+  });
+
+  test("Isolate may be turned off, which keeps the Condition's Structures tinted", () => {
+    const state = run({ type: "focusCondition", id: "vertigo" }, { type: "toggleIsolate" });
+    expect(state.isolate).toBe(false);
+    expect(state.focus).toEqual({ kind: "condition", id: "vertigo" });
+    const { structures } = deriveView(state);
+    expect(STRUCTURE_IDS.filter((id) => structures[id].look === "oxblood")).toEqual(["pons", "medulla-oblongata", "cerebellum"]);
+    expect(STRUCTURE_IDS.filter((id) => structures[id].look === "ghost")).toEqual([]);
+  });
+});
+
+describe("select inside a Condition focus", () => {
+  test("one of its Structures keeps the Condition as `via`, and the isolation moves to it", () => {
+    const state = run({ type: "focusCondition", id: "vertigo" }, { type: "select", id: "pons" });
+    expect(state.focus).toEqual({ kind: "structure", id: "pons", via: "vertigo" });
+    expect(state.isolate).toBe(true);
+    expect(focusedStructures(state.focus)).toEqual(["pons"]);
+    expect(state.camera).toEqual({ intent: "frame", seq: 2 });
+  });
+
+  test("a Structure outside the Condition drops `via`", () => {
+    const state = run({ type: "focusCondition", id: "vertigo" }, { type: "select", id: "hippocampus" });
+    expect(state.focus).toEqual({ kind: "structure", id: "hippocampus" });
+  });
+
+  test("`via` carries between that Condition's Structures, and survives re-selecting", () => {
+    const within = run({ type: "focusCondition", id: "vertigo" }, { type: "select", id: "pons" }, { type: "select", id: "cerebellum" });
+    expect(within.focus).toEqual({ kind: "structure", id: "cerebellum", via: "vertigo" });
+    expect(explorerReducer(within, { type: "select", id: "cerebellum" }).focus).toEqual(within.focus);
+    expect(explorerReducer(within, { type: "select", id: "thalamus" }).focus).toEqual({ kind: "structure", id: "thalamus" });
+  });
+
+  test("the back link returns to the Condition focus, isolated again", () => {
+    const state = run(
+      { type: "focusCondition", id: "vertigo" },
+      { type: "select", id: "pons" },
+      { type: "toggleIsolate" },
+      { type: "focusCondition", id: "vertigo" },
+    );
+    expect(state.focus).toEqual({ kind: "condition", id: "vertigo" });
+    expect(state.isolate).toBe(true);
+  });
+});
+
+describe("toggleIsolate", () => {
+  test("does nothing without a Focus", () => {
+    expect(explorerReducer(initialExplorerState, { type: "toggleIsolate" })).toBe(initialExplorerState);
+  });
+
+  test("toggles with a Structure focused, and counts as an interaction", () => {
+    const focused: ExplorerState = { ...run({ type: "select", id: "pons" }), touched: false };
+    const on = explorerReducer(focused, { type: "toggleIsolate" });
+    expect(on.isolate).toBe(true);
+    expect(on.touched).toBe(true);
+    expect(explorerReducer(on, { type: "toggleIsolate" }).isolate).toBe(false);
+  });
+
+  test("follows the Focus: selecting another Structure moves the isolation to it", () => {
+    const state = run({ type: "select", id: "pons" }, { type: "toggleIsolate" }, { type: "select", id: "thalamus" });
+    expect(state.isolate).toBe(true);
+    expect(deriveView(state).structures.thalamus.look).toBe("oxblood");
+    expect(deriveView(state).structures.pons.look).toBe("ghost");
+  });
+
+  test("never moves the camera", () => {
+    const focused = run({ type: "select", id: "pons" });
+    expect(explorerReducer(focused, { type: "toggleIsolate" }).camera).toBe(focused.camera);
+  });
+
+  test("clearing the Focus turns it off", () => {
+    expect(run({ type: "focusCondition", id: "migraine" }, { type: "clearFocus" }).isolate).toBe(false);
+  });
+});
+
+describe("reset", () => {
+  const tooled: ExplorerState = {
+    ...run({ type: "focusCondition", id: "migraine" }, { type: "hover", id: "pons" }),
+    xray: true,
+    split: true,
+    slice: { on: true, axis: "sagittal", mm: -22 },
+  };
+
+  test("returns focus, Isolate and every tool to the initial state, Slice to Coronal 0 mm", () => {
+    const state = explorerReducer(tooled, { type: "reset" });
+    expect(state.focus).toEqual({ kind: "none" });
+    expect(state.isolate).toBe(false);
+    expect(state.xray).toBe(false);
+    expect(state.split).toBe(false);
+    expect(state.slice).toEqual({ on: false, axis: "coronal", mm: 0 });
+  });
+
+  test("sends the camera home", () => {
+    expect(explorerReducer(tooled, { type: "reset" }).camera).toEqual({ intent: "home", seq: tooled.camera.seq + 1 });
+  });
+
+  test("`touched` stays true, even when Reset is the first interaction", () => {
+    expect(explorerReducer(tooled, { type: "reset" }).touched).toBe(true);
+    expect(explorerReducer(initialExplorerState, { type: "reset" }).touched).toBe(true);
+  });
+
+  test("leaves the pointer's hover alone", () => {
+    expect(explorerReducer(tooled, { type: "reset" }).hovered).toBe("pons");
+  });
+});
+
+describe("restore (Back and Forward)", () => {
+  test("brings back a history entry's Focus and Isolate exactly, `via` included, and frames it", () => {
+    const current = run({ type: "focusCondition", id: "vertigo" });
+    const state = explorerReducer(current, {
+      type: "restore",
+      focus: { kind: "structure", id: "pons", via: "vertigo" },
+      isolate: false,
+    });
+    expect(state.focus).toEqual({ kind: "structure", id: "pons", via: "vertigo" });
+    expect(state.isolate).toBe(false);
+    expect(state.camera).toEqual({ intent: "frame", seq: current.camera.seq + 1 });
+  });
+
+  test("an entry without a Focus clears it", () => {
+    const state = explorerReducer(run({ type: "focusCondition", id: "vertigo" }), {
+      type: "restore",
+      focus: { kind: "none" },
+      isolate: false,
+    });
+    expect(state.focus).toEqual({ kind: "none" });
+    expect(state.isolate).toBe(false);
+  });
+
+  test("the same Focus doesn't move the camera; the same Focus and Isolate change nothing", () => {
+    const current = run({ type: "select", id: "pons" });
+    const isolated = explorerReducer(current, { type: "restore", focus: { kind: "structure", id: "pons" }, isolate: true });
+    expect(isolated.isolate).toBe(true);
+    expect(isolated.camera).toBe(current.camera);
+    expect(explorerReducer(current, { type: "restore", focus: { kind: "structure", id: "pons" }, isolate: false })).toBe(current);
+  });
+});
+
+describe("deriveView rule 2: Isolate", () => {
+  test("everything outside a Structure focus is ghost, uncapped and not pickable", () => {
+    const { structures } = deriveView(run({ type: "select", id: "thalamus" }, { type: "toggleIsolate" }));
+    expect(structures.thalamus).toEqual({ look: "oxblood", cap: true, pickable: true });
+    for (const id of STRUCTURE_IDS.filter((id) => id !== "thalamus")) {
+      expect(structures[id]).toEqual({ look: "ghost", cap: false, pickable: false });
+    }
+  });
+
+  test("a Condition focus ghosts everything but its Structures", () => {
+    const { structures } = deriveView(run({ type: "focusCondition", id: "parkinsons-disease" }));
+    expect(STRUCTURE_IDS.filter((id) => structures[id].look !== "ghost")).toEqual(["basal-ganglia", "substantia-nigra"]);
+  });
+
+  test("an Isolate flag without a Focus ghosts nothing", () => {
+    const { structures } = deriveView({ ...initialExplorerState, isolate: true });
+    for (const id of STRUCTURE_IDS) expect(structures[id].look).toBe("porcelain");
+  });
+
+  test("the camera frames all of a Condition's Structures", () => {
+    expect(deriveView(run({ type: "focusCondition", id: "essential-tremor" })).camera.frame).toEqual(["cerebellum", "thalamus"]);
+  });
+});
+
+describe("calloutStructure", () => {
+  test("names the hovered Structure", () => {
+    expect(calloutStructure(initialExplorerState)).toBeNull();
+    expect(calloutStructure(run({ type: "hover", id: "pons" }))).toBe("pons");
+  });
+
+  test("a ghost never gets one, even from the Structure index", () => {
+    const isolated = run({ type: "focusCondition", id: "ataxia" });
+    expect(calloutStructure(explorerReducer(isolated, { type: "hover", id: "pons" }))).toBeNull();
+    expect(calloutStructure(explorerReducer(isolated, { type: "hover", id: "cerebellum" }))).toBe("cerebellum");
   });
 });

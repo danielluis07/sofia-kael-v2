@@ -8,6 +8,7 @@ import { SpecimenOutline } from "@/components/explorer/specimen-outline";
 import { StructureCallout, type CalloutHandle } from "@/components/explorer/structure-callout";
 import { StructureIndex } from "@/components/explorer/structure-index";
 import { StructurePanel } from "@/components/explorer/structure-panel";
+import { ToolRail } from "@/components/explorer/tool-rail";
 import { useMediaQuery, useReducedMotion } from "@/components/explorer/use-media-query";
 import { EXPLORER } from "@/content/site";
 import { CAMERA_MS } from "@/lib/brain/framing";
@@ -28,8 +29,8 @@ const LOAD_AHEAD = "100% 0px";
 
 /**
  * The live part of the stage: the specimen, its loading line drawing and
- * readout, the first-use hint, the callout, the Structure index and the
- * Structure panel. Without WebGL2, or if the GLB fails, it stays on the line
+ * readout, the first-use hint, the callout, the Structure index, the tool rail and the
+ * Structure or Condition panel. Without WebGL2, or if the GLB fails, it stays on the line
  * drawing and says how to explore instead; the index and the panel work as
  * text either way (ADR 0006).
  */
@@ -42,7 +43,7 @@ export function ExplorerStage() {
   const dispatch = useExplorerDispatch();
   const reducedMotion = useReducedMotion();
   const callout = useRef<CalloutHandle>(null);
-  const panelOpen = useExplorer((state) => state.focus.kind === "structure");
+  const panelOpen = useExplorer((state) => state.focus.kind !== "none");
   const panelDocked = useMediaQuery(PANEL_DOCKED, true);
   const idle = !touched && !reducedMotion;
   const cameraMs = reducedMotion ? 0 : CAMERA_MS;
@@ -132,7 +133,7 @@ export function ExplorerStage() {
         ) : null}
       </div>
 
-      <div className="pointer-events-none absolute inset-x-0 bottom-10 flex justify-center px-(--gutter) text-center">
+      <div className="pointer-events-none absolute inset-x-0 bottom-24 flex justify-center px-(--gutter) text-center">
         {live ? (
           <p
             data-testid="specimen-readout"
@@ -154,6 +155,16 @@ export function ExplorerStage() {
         )}
       />
       <StructurePanel />
+      {/* Tools need the scene; the fallback has none. Docked beside the panel, the rail centres in what's left. */}
+      {phase === "fallback" ? null : (
+        <div
+          className={cn(
+            "pointer-events-none absolute inset-x-0 bottom-6 z-20 flex justify-center px-(--gutter) transition-[right] duration-(--dur-base) ease-out",
+            panelOpen && "lg:right-(--panel-w)",
+          )}>
+          <ToolRail className="pointer-events-auto" />
+        </div>
+      )}
     </div>
   );
 }
@@ -164,7 +175,7 @@ function FirstUseHint({ shown }: { shown: boolean }) {
     <p
       aria-hidden={!shown}
       className={cn(
-        "label pointer-events-none absolute bottom-10 left-1/2 flex -translate-x-1/2 items-center gap-2 whitespace-nowrap text-ink transition-opacity duration-(--dur-slow)",
+        "label pointer-events-none absolute bottom-24 left-1/2 flex -translate-x-1/2 items-center gap-2 whitespace-nowrap text-ink transition-opacity duration-(--dur-slow)",
         !shown && "opacity-0",
       )}>
       <span className="size-2 rounded-full border-[1.5px] border-oxblood" />

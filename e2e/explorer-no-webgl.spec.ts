@@ -40,3 +40,10 @@ test("without WebGL the Structure index and panel still work as text, and ?struc
   await expect(page).toHaveURL(/\/\?structure=cerebellum#brain-explorer$/);
   expect(errors).toEqual([]);
 });
+
+test("without WebGL ?condition= opens the Condition panel, with no tool rail", async ({ page }) => {
+  await page.goto("/?condition=vertigo#brain-explorer");
+  await expect(page.locator("[data-specimen]")).toHaveAttribute("data-specimen", "fallback");
+  await expect(page.getByRole("complementary", { name: "Vertigo" })).toBeVisible();
+  await expect(page.getByRole("group", { name: "Tools" })).toHaveCount(0);
+});

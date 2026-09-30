@@ -13,7 +13,7 @@ import { EffectComposer, N8AO, ToneMapping } from "@react-three/postprocessing";
 import { ToneMappingMode } from "postprocessing";
 import { useExplorerDispatch, useExplorerStore, useExplorerView } from "@/components/explorer/explorer-store";
 import type { CalloutHandle } from "@/components/explorer/structure-callout";
-import type { ExplorerView, Look } from "@/lib/brain/explorer-state";
+import { calloutStructure, type ExplorerView, type Look } from "@/lib/brain/explorer-state";
 import { FOV, HOME_DIRECTION, ZOOM_IN, ZOOM_OUT, frameDistance, homeDistance } from "@/lib/brain/framing";
 import { DRACO_DECODER_PATH, SPECIMEN_URL, loadingPercent } from "@/lib/brain/specimen";
 import { isStructureId, type ContextMeshExtras, type StructureId, type StructureMeshExtras } from "@/lib/brain/structures";
@@ -43,6 +43,8 @@ export type BrainStageProps = {
 const ROUGHNESS = 0.85;
 /** A touch brighter than the prototype, whose base colour read slightly grey. */
 const EXPOSURE = 1.1;
+/** `--porcelain-ghost` (DESIGN.md §2): `--porcelain` at 8% opacity. */
+const GHOST_OPACITY = 0.08;
 /** Pointer travel, in CSS pixels, before a press counts as an orbit drag rather than a click. */
 const DRAG_PX = 4;
 
@@ -88,6 +90,15 @@ async function loadSpecimen(onProgress: (percent: number) => void): Promise<Spec
     const materials: Record<Look, THREE.MeshStandardMaterial> = {
       porcelain: new THREE.MeshStandardMaterial({ color: token("--porcelain"), roughness: ROUGHNESS, metalness: 0 }),
       oxblood: new THREE.MeshStandardMaterial({ color: token("--oxblood"), roughness: ROUGHNESS, metalness: 0 }),
+      // Depth-free, so the ghosts never hide the Focus or each other.
+      ghost: new THREE.MeshStandardMaterial({
+        color: token("--porcelain"),
+        roughness: ROUGHNESS,
+        metalness: 0,
+        transparent: true,
+        opacity: GHOST_OPACITY,
+        depthWrite: false,
+      }),
     };
     const geometries: THREE.BufferGeometry[] = [];
     const parts = new Map<StructureId, THREE.Mesh[]>();
@@ -258,11 +269,17 @@ type Tween = {
   to: THREE.Vector3;
   fromDistance: number;
   toDistance: number;
-  /** From the orbit target to the camera; the Visitor's viewing angle is kept. */
+  /** From the orbit target to the camera, at the start. */
   direction: THREE.Vector3;
+  /** How far the viewing angle turns by the end: none for `frame`, back to the home angle for `home`. */
+  turn: THREE.Quaternion;
   ms: number;
   start: number | null;
 };
+
+const NO_TURN = new THREE.Quaternion();
+const turnStep = new THREE.Quaternion();
+const viewDirection = new THREE.Vector3();
 
 /** easeInOutCubic, close to `--ease-in-out`. */
 function easeInOut(t: number): number {
@@ -270,11 +287,14 @@ function easeInOut(t: number): number {
 }
 
 /**
- * Carries out the camera intent (ADR 0003 "Camera"). `frame` eases the orbit
- * target to the focused Structure-sides, both halves in view, and the distance
- * to fit them (never much closer than home), over `ms`: `--dur-camera`, or a cut under
- * reduced motion. The Visitor's viewing angle is kept, and grabbing the specimen
- * mid-move hands the camera straight back.
+ * Carries out the camera intent (ADR 0003 "Camera") over `ms`: `--dur-camera`,
+ * or a cut under reduced motion. Grabbing the specimen mid-move hands the
+ * camera straight back.
+ * - `frame` eases the orbit target to the focused Structure-sides, both halves
+ *   in view, and the distance to fit them (never much closer than home). The
+ *   Visitor's viewing angle is kept.
+ * - `home` (Reset) eases back to the home view: centred, at the home distance
+ *   and angle.
  */
 function CameraRig({ specimen, ms, insetRight }: { specimen: Specimen; ms: number; insetRight: number }) {
   const { camera: request } = useExplorerView();
@@ -286,23 +306,32 @@ function CameraRig({ specimen, ms, insetRight }: { specimen: Specimen; ms: numbe
   useEffect(() => {
     if (!controls || request.seq === handled.current) return;
     handled.current = request.seq;
-    // `home` (Reset) and `medial` (Split) arrive with their tools.
-    if (request.intent !== "frame" || request.frame.length === 0) return;
     const { camera, size } = get();
+    const offset = camera.position.clone().sub(controls.target);
+    const from = { from: controls.target.clone(), fromDistance: offset.length(), direction: offset.normalize(), ms, start: null };
+
+    if (request.intent === "home") {
+      const home = new THREE.Vector3(...HOME_DIRECTION).normalize();
+      tween.current = {
+        ...from,
+        to: new THREE.Vector3(),
+        toDistance: homeDistance(specimen.size, size.width / size.height),
+        turn: new THREE.Quaternion().setFromUnitVectors(from.direction, home),
+      };
+      return;
+    }
+    // `medial` (Split) arrives with its tool.
+    if (request.intent !== "frame" || request.frame.length === 0) return;
     const box = new THREE.Box3();
     for (const id of request.frame) for (const mesh of specimen.parts.get(id) ?? []) box.expandByObject(mesh);
     const sphere = box.getBoundingSphere(new THREE.Sphere());
     // Fit the part of the stage the panel leaves uncovered.
     const aspect = (size.width - insetRight) / size.height;
-    const offset = camera.position.clone().sub(controls.target);
     tween.current = {
-      from: controls.target.clone(),
+      ...from,
       to: sphere.center,
-      fromDistance: offset.length(),
       toDistance: frameDistance(sphere.radius, aspect, homeDistance(specimen.size, aspect)),
-      direction: offset.normalize(),
-      ms,
-      start: null,
+      turn: NO_TURN,
     };
   }, [controls, get, request, specimen, ms, insetRight]);
 
@@ -323,7 +352,8 @@ function CameraRig({ specimen, ms, insetRight }: { specimen: Specimen; ms: numbe
     const eased = easeInOut(t);
     controls.target.lerpVectors(move.from, move.to, eased);
     const distance = THREE.MathUtils.lerp(move.fromDistance, move.toDistance, eased);
-    camera.position.copy(controls.target).addScaledVector(move.direction, distance);
+    viewDirection.copy(move.direction).applyQuaternion(turnStep.slerpQuaternions(NO_TURN, move.turn, eased));
+    camera.position.copy(controls.target).addScaledVector(viewDirection, distance);
     camera.lookAt(controls.target);
     if (t === 1) tween.current = null;
   });
@@ -558,7 +588,8 @@ function CalloutAnchor({
   }, [callout]);
 
   useFrame(({ camera, size }) => {
-    const hovered = store.getState().hovered;
+    // A ghost never gets a callout, even from the Structure index.
+    const hovered = calloutStructure(store.getState());
     // The pointer's own surface point while it's on the hovered Structure; otherwise one found for it.
     const live = pointedRef.current?.id === hovered ? pointedRef.current : null;
     if (anchor.current?.id !== hovered) anchor.current = hovered ? (live ?? anchorFor(specimen, hovered, camera)) : null;
