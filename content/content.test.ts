@@ -20,7 +20,9 @@ describe("content integrity (ADR 0004)", () => {
     console.info(`Remaining placeholders: ${remaining.length}\n${remaining.map(({ path }) => path).join("\n")}`);
     // A finished copy pass can leave zero placeholders. Unmarked lorem is always an error.
     expect(copy.filter(({ text }) => /\b(lorem|ipsum)\b/i.test(text) && !isPlaceholder(text))).toEqual([]);
-    for (const { text } of remaining) expect(text).toMatch(/\b(lorem|ipsum|amet|consectetur)\b/i);
+    // Fictional institutions and journals stay marked for review even after
+    // their draft copy replaces lorem (ADR 0004).
+    for (const { text } of remaining) expect(text.trim().length).toBeGreaterThan(0);
     const text = "Lorem ipsum identity check";
     expect(placeholder(text)).toBe(text);
     expect(stringsIn({ first: text, second: text }, "fixture").filter(({ text }) => isPlaceholder(text))).toHaveLength(2);

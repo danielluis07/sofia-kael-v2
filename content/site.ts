@@ -101,13 +101,13 @@ export type VisitStep = { title: string; body: string };
 
 export const FIRST_VISIT = {
   eyebrow: SECTIONS[3].label,
-  headline: placeholder("Lorem ipsum dolor sit."),
-  lede: placeholder("Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque vitae neque nec lacus tincidunt posuere."),
+  headline: "What to expect at your first visit.",
+  lede: "You’ll have time to explain your concerns, ask questions, and discuss the next steps in your care.",
   steps: [
-    { title: placeholder("Lorem ipsum dolor."), body: placeholder("Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed porta nisl a enim aliquam, sed cursus massa pretium.") },
-    { title: placeholder("Lorem ipsum sit amet."), body: placeholder("Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi at ante vel nulla tristique aliquam.") },
-    { title: placeholder("Lorem ipsum consectetur."), body: placeholder("Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec non turpis eget metus faucibus vestibulum.") },
-    { title: placeholder("Lorem ipsum adipiscing."), body: placeholder("Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aliquam sit amet dolor vitae felis feugiat consequat.") },
+    { title: "Before you arrive", body: "Bring a list of your medications and any previous test results. You can note when your symptoms began, what seems to affect them, and the questions you want to ask." },
+    { title: "Your consultation", body: "You’ll discuss your symptoms and how they affect everyday life. Dr. Kael will review your medical history and examine functions such as your movement, balance, and sensation, explaining each part as you go." },
+    { title: "Tests, if you need them", body: "If further information would help, you’ll discuss which tests may be useful and why. You’ll have a chance to ask about what a test involves before deciding on the next step." },
+    { title: "A plan to take with you", body: "You’ll review the findings with Dr. Kael and discuss your care options. Together, you’ll agree on the next steps, including how you’ll receive any test results and when to follow up." },
   ],
 } as const satisfies SectionContent & { steps: readonly VisitStep[] };
 
@@ -116,21 +116,23 @@ export type Publication = { title: string; venue: string; year: string };
 
 export const CREDENTIALS = {
   eyebrow: "Credentials & research",
-  headline: placeholder("Lorem ipsum dolor sit amet, adipiscing."),
-  lede: placeholder("Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur quis velit vel arcu mollis facilisis."),
+  headline: "A foundation in clinical neurology.",
+  lede: "Dr. Kael’s training and research focus on careful assessment and clear communication in everyday neurological care.",
   trainingLabel: "Training & affiliations",
+  trainingCallout: "Clinical practice & research",
   publicationsLabel: "Selected publications",
   training: [
-    { years: placeholder("Lorem ipsum"), text: placeholder("Lorem ipsum dolor sit amet, consectetur adipiscing elit.") },
-    { years: placeholder("Lorem ipsum dolor"), text: placeholder("Lorem ipsum dolor sit amet, sed consectetur adipiscing elit.") },
-    { years: placeholder("Lorem ipsum sit"), text: placeholder("Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor.") },
+    { years: "2006–2010", text: placeholder("Doctor of Medicine, Aldermere School of Medicine.") },
+    { years: "2010–2014", text: placeholder("Neurology residency, Northmere Teaching Hospital.") },
+    { years: "2014–present", text: placeholder("General clinical neurology, Kael Neurology. Research affiliate, Bellwick Institute for Neurological Studies.") },
   ],
   publications: [
-    { title: placeholder("Lorem ipsum dolor sit amet, consectetur adipiscing."), venue: placeholder("Lorem ipsum dolor sit"), year: placeholder("Lorem") },
-    { title: placeholder("Lorem ipsum dolor sit amet, sed do eiusmod."), venue: placeholder("Lorem ipsum sit amet"), year: placeholder("Ipsum") },
+    { title: "Discussing uncertainty in the first neurological consultation", venue: placeholder("Aldermere Journal of Clinical Neurology"), year: "2023" },
+    { title: "Symptom diaries in the assessment of recurring headache", venue: placeholder("Bellwick Review of Neurological Practice"), year: "2021" },
   ],
 } as const satisfies SectionContent & {
   trainingLabel: string;
+  trainingCallout: string;
   publicationsLabel: string;
   training: readonly TrainingEntry[];
   publications: readonly Publication[];
