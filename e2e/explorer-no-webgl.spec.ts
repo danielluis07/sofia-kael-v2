@@ -16,6 +16,7 @@ test("without WebGL the stage stays on the line drawing and the text description
   const stage = page.locator("[data-specimen]");
   await expect(stage).toHaveAttribute("data-specimen", "fallback");
   await expect(stage.getByTestId("specimen-outline")).toBeVisible();
+  await expect(stage.getByTestId("specimen-outline").locator('img[src="/art/specimen-outline.svg"]')).toHaveAttribute("alt", "");
   await expect(
     page.getByText("Explore the brain using the Structure index. Each Structure has a description and a list of related Conditions."),
   ).toBeVisible();

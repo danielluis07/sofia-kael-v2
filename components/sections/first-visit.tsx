@@ -1,4 +1,5 @@
 import { Section } from "@/components/section";
+import { Reveal } from "@/components/reveal";
 import { FIRST_VISIT, SECTIONS } from "@/content/site";
 
 export function FirstVisit() {
@@ -21,7 +22,11 @@ export function FirstVisit() {
             ))}
           </ol>
         </div>
-        {/* Columns 8–12 are reserved for the brain-derived section art. */}
+        <Reveal aria-hidden="true" className="mt-12 md:col-span-5 md:col-start-8 md:mt-0 md:self-start">
+          {/* The SVG contains one callout, anchored on the Thalamus contour. */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/art/coronal-section.svg" alt="" width={1000} height={1000} loading="lazy" className="h-auto w-full" />
+        </Reveal>
       </div>
     </Section>
   );

@@ -40,9 +40,12 @@ test.describe("the specimen", () => {
     await page.locator("#brain-explorer").scrollIntoViewIfNeeded();
     const readout = page.getByTestId("specimen-readout");
     await expect(readout).toHaveText(/^Loading specimen · \d+%$/);
+    await expect(page.getByTestId("specimen-outline").locator("..")).toHaveCSS("transition-duration", "0.4s");
     await expect(stage(page)).toHaveAttribute("data-specimen", "ready", { timeout: 60_000 });
     await expect(readout).toHaveText("Loading specimen · 100%");
     await expect(readout).toHaveCSS("opacity", "0");
+    await expect(page.getByTestId("specimen-outline").locator("..")).toHaveCSS("opacity", "0");
+    await expect(page.getByRole("img", { name: DESCRIPTION }).locator(":scope > div")).toHaveCSS("transition-duration", "0.4s");
 
     const hint = page.getByText("Drag to rotate · Click a Structure");
     await expect(hint).toHaveAttribute("aria-hidden", "false");

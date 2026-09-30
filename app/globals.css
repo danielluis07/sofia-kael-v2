@@ -300,3 +300,17 @@
     transform: none;
   }
 }
+
+/* The home camera's height/width constraint, derived by build:brain-art from
+   the GLB bounds and lib/brain/framing.ts. cqh/cqw belong to the stage. */
+.specimen-outline {
+  width: min(100cqh, calc(100cqw / var(--specimen-framing-ratio)));
+  height: auto;
+}
+
+.specimen-outline-portrait { display: none; }
+
+@container (max-aspect-ratio: 3 / 4) {
+  .specimen-outline-wide { display: none; }
+  .specimen-outline-portrait { display: block; }
+}

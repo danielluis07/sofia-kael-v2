@@ -12,6 +12,7 @@
     "check": "bun run typecheck && bun run lint && bun test && bun run build",
     "budget": "bun scripts/bundle-budget.ts",
     "build:brain": "bun scripts/build-brain.ts",
+    "build:brain-art": "bun scripts/build-brain-art.ts",
     "e2e": "playwright test",
     "lhci": "lhci autorun"
   },
