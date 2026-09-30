@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { FOV, ZOOM_OUT, frameDistance, homeDistance } from "./framing";
+import { FOV, SPLIT_M, ZOOM_OUT, frameDistance, homeDistance, medialDirection } from "./framing";
 
 // The curated GLB's bounds, in metres.
 const SIZE = [0.138, 0.16, 0.18] as const;
@@ -44,5 +44,24 @@ describe("frameDistance", () => {
   test("a large one never pushes it past the zoom-out limit", () => {
     const home = homeDistance(SIZE, 16 / 9);
     expect(frameDistance(1, 16 / 9, home)).toBeCloseTo(home * ZOOM_OUT, 10);
+  });
+});
+
+describe("medialDirection", () => {
+  test("a unit vector from the front, turned toward the near side and a little above", () => {
+    for (const near of ["left", "right"] as const) {
+      const [x, y, z] = medialDirection(near);
+      expect(Math.hypot(x, y, z)).toBeCloseTo(1, 6);
+      expect(Math.sign(x)).toBe(near === "left" ? 1 : -1);
+      expect(y).toBeGreaterThan(0);
+      expect(z).toBeGreaterThan(Math.abs(x));
+    }
+  });
+
+  test("the sight line from the far half's medial surface clears the front of the near half", () => {
+    // From the far medial surface at x = −SPLIT_M, the line reaches the near medial surface at x = +SPLIT_M
+    // in front of the brain, so the near half never hides the far one's middle.
+    const [x, , z] = medialDirection("left");
+    expect(((2 * SPLIT_M) / x) * z).toBeGreaterThan(SIZE[2] / 2);
   });
 });

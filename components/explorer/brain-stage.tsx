@@ -14,9 +14,17 @@ import { ToneMappingMode } from "postprocessing";
 import { useExplorer, useExplorerDispatch, useExplorerStore, useExplorerView } from "@/components/explorer/explorer-store";
 import type { CalloutHandle } from "@/components/explorer/structure-callout";
 import { calloutStructure, type ExplorerView, type Look } from "@/lib/brain/explorer-state";
-import { FOV, HOME_DIRECTION, ZOOM_IN, ZOOM_OUT, frameDistance, homeDistance } from "@/lib/brain/framing";
+import { FOV, HOME_DIRECTION, SPLIT_M, ZOOM_IN, ZOOM_OUT, frameDistance, homeDistance, medialDirection } from "@/lib/brain/framing";
 import { DRACO_DECODER_PATH, SPECIMEN_URL, loadingPercent } from "@/lib/brain/specimen";
-import { isStructureId, layerOf, type ContextMeshExtras, type StructureId, type StructureMeshExtras } from "@/lib/brain/structures";
+import {
+  SIDES,
+  isStructureId,
+  layerOf,
+  type ContextMeshExtras,
+  type Side,
+  type StructureId,
+  type StructureMeshExtras,
+} from "@/lib/brain/structures";
 
 export type Gesture = "orbit" | "zoom";
 
@@ -64,6 +72,10 @@ type Specimen = {
   floorY: number;
   /** Each Structure's two side meshes. */
   parts: ReadonlyMap<StructureId, readonly THREE.Mesh[]>;
+  /** Every mesh of each hemisphere, white matter included: Split slides the groups apart along X. */
+  halves: Readonly<Record<Side, THREE.Group>>;
+  /** Split's slide, 0 (whole) to 1 (apart), before easing. */
+  split: { value: number };
   materials: Readonly<Record<Look, THREE.Material>>;
   /** X-ray's cross-fade, 0 (porcelain) to 1 (frost): the frost material's uniform. */
   xray: { value: number };
@@ -144,12 +156,14 @@ async function loadSpecimen(onProgress: (percent: number) => void): Promise<Spec
     };
     const geometries: THREE.BufferGeometry[] = [];
     const parts = new Map<StructureId, THREE.Mesh[]>();
+    const sided: [THREE.Mesh, Side][] = [];
     const bounds = new THREE.Box3();
     gltf.scene.traverse((object) => {
       if (!(object instanceof THREE.Mesh)) return;
       object.material = materials.porcelain;
       geometries.push(object.geometry);
       const extras = extrasOf(object);
+      if (extras) sided.push([object, extras.side]);
       // White matter is context for Slice only (ADR 0002).
       if (!extras || "context" in extras) {
         object.visible = false;
@@ -157,13 +171,21 @@ async function loadSpecimen(onProgress: (percent: number) => void): Promise<Spec
       }
       bounds.expandByObject(object);
       object.userData.structure = extras.structure;
+      object.userData.side = extras.side;
       parts.set(extras.structure, [...(parts.get(extras.structure) ?? []), object]);
     });
+    // Every mesh is already one side's, midline meshes cut at x = 0 (ADR 0002).
+    const halves = { left: new THREE.Group(), right: new THREE.Group() };
+    gltf.scene.add(halves.left, halves.right);
+    gltf.scene.updateMatrixWorld(true);
+    for (const [mesh, side] of sided) halves[side].attach(mesh);
     return {
       root: gltf.scene,
       size: bounds.getSize(new THREE.Vector3()).toArray(),
       floorY: bounds.min.y,
       parts,
+      halves,
+      split: { value: 0 },
       materials,
       xray,
       dispose() {
@@ -189,6 +211,8 @@ export default function BrainStage({
   onGesture,
 }: BrainStageProps) {
   const [specimen, setSpecimen] = useState<Specimen | null>(null);
+  /** The halves are sliding: the contact shadow follows them, then bakes once where they settle. */
+  const [sliding, setSliding] = useState(false);
   const progress = useEffectEvent(onProgress);
   const fail = useEffectEvent(onFail);
   /** The Structure under the pointer, shared by picking and the callout. */
@@ -235,9 +259,10 @@ export default function BrainStage({
       <directionalLight position={[-0.5, 0.2, -0.4]} intensity={0.3} />
       <primitive object={specimen.root} />
       <Looks specimen={specimen} xrayMs={xrayMs} />
-      {/* Baked once: the idle rotation moves the camera, not the brain. */}
+      <SplitHalves specimen={specimen} ms={cameraMs} onSliding={setSliding} />
+      {/* Baked once: the idle rotation moves the camera, not the brain. Only Split moves the brain. */}
       <ContactShadows
-        frames={1}
+        frames={sliding ? Infinity : 1}
         position={[0, specimen.floorY - 0.004, 0]}
         scale={0.42}
         far={0.09}
@@ -291,6 +316,52 @@ function Looks({ specimen, xrayMs }: { specimen: Specimen; xrayMs: number }) {
     if (fadeXray(specimen, target, xrayMs === 0 ? 1 : (delta * 1000) / xrayMs)) dress(specimen, structures);
   });
   return null;
+}
+
+const SIGN: Readonly<Record<Side, 1 | -1>> = { left: 1, right: -1 };
+
+/** How far the left half sits along X at Split's `progress`, in metres; the right half mirrors it. */
+function splitOffset(progress: number): number {
+  return SPLIT_M * easeInOut(progress);
+}
+
+/** Steps Split's slide toward `target` and places the halves; true while they're still moving. */
+function slide(specimen: Specimen, target: 0 | 1, step: number): boolean {
+  const progress = specimen.split;
+  if (progress.value === target) return false;
+  progress.value = target > progress.value ? Math.min(target, progress.value + step) : Math.max(target, progress.value - step);
+  const offset = splitOffset(progress.value);
+  for (const side of SIDES) specimen.halves[side].position.x = SIGN[side] * offset;
+  return progress.value !== target;
+}
+
+/**
+ * Slides the halves apart along X over `ms` (`--dur-camera`, a cut under
+ * reduced motion) and back. Reports when a slide starts and when it settles.
+ */
+function SplitHalves({ specimen, ms, onSliding }: { specimen: Specimen; ms: number; onSliding: (sliding: boolean) => void }) {
+  const split = useExplorer((state) => state.split);
+  const sliding = useRef(false);
+  useFrame((_, delta) => {
+    const moving = slide(specimen, split ? 1 : 0, ms === 0 ? 1 : (delta * 1000) / ms);
+    if (moving === sliding.current) return;
+    sliding.current = moving;
+    onSliding(moving);
+  });
+  return null;
+}
+
+/** World bounds of `meshes` where they sit once the halves settle (`split` or whole), even mid-slide. */
+function settledBox(specimen: Specimen, meshes: Iterable<THREE.Mesh>, split: boolean): THREE.Box3 {
+  const box = new THREE.Box3();
+  const part = new THREE.Box3();
+  const shift = new THREE.Vector3();
+  const still = splitOffset(split ? 1 : 0) - splitOffset(specimen.split.value);
+  for (const mesh of meshes) {
+    shift.set(SIGN[mesh.userData.side as Side] * still, 0, 0);
+    box.union(part.setFromObject(mesh).translate(shift));
+  }
+  return box;
 }
 
 /**
@@ -358,9 +429,15 @@ function easeInOut(t: number): number {
  *   Visitor's viewing angle is kept.
  * - `home` (Reset) eases back to the home view: centred, at the home distance
  *   and angle.
+ * - `medial` (Split on) turns to look through the gap at the far half's medial
+ *   surface, from the side the camera is on, at the home distance.
+ *
+ * `frame` and `medial` aim where the halves settle, so a move that starts
+ * mid-slide still lands on them.
  */
 function CameraRig({ specimen, ms, insetRight }: { specimen: Specimen; ms: number; insetRight: number }) {
   const { camera: request } = useExplorerView();
+  const store = useExplorerStore();
   const get = useThree((state) => state.get);
   const controls = useThree((state) => state.controls) as OrbitControlsImpl | null;
   const tween = useRef<Tween | null>(null);
@@ -383,20 +460,33 @@ function CameraRig({ specimen, ms, insetRight }: { specimen: Specimen; ms: numbe
       };
       return;
     }
-    // `medial` (Split) arrives with its tool.
-    if (request.intent !== "frame" || request.frame.length === 0) return;
-    const box = new THREE.Box3();
-    for (const id of request.frame) for (const mesh of specimen.parts.get(id) ?? []) box.expandByObject(mesh);
-    const sphere = box.getBoundingSphere(new THREE.Sphere());
     // Fit the part of the stage the panel leaves uncovered.
     const aspect = (size.width - insetRight) / size.height;
+    const { split } = store.getState();
+
+    if (request.intent === "medial") {
+      const near: Side = from.direction.x >= 0 ? "left" : "right";
+      const far = [...specimen.parts.values()].flat().filter((mesh) => mesh.userData.side !== near);
+      const center = settledBox(specimen, far, split).getCenter(new THREE.Vector3());
+      tween.current = {
+        ...from,
+        // Halfway between the far half's centre and the midline, so the near half stays in view too.
+        to: center.setX(center.x / 2),
+        toDistance: homeDistance(specimen.size, aspect),
+        turn: new THREE.Quaternion().setFromUnitVectors(from.direction, new THREE.Vector3(...medialDirection(near))),
+      };
+      return;
+    }
+    if (request.frame.length === 0) return;
+    const framed = request.frame.flatMap((id) => specimen.parts.get(id) ?? []);
+    const sphere = settledBox(specimen, framed, split).getBoundingSphere(new THREE.Sphere());
     tween.current = {
       ...from,
       to: sphere.center,
       toDistance: frameDistance(sphere.radius, aspect, homeDistance(specimen.size, aspect)),
       turn: NO_TURN,
     };
-  }, [controls, get, request, specimen, ms, insetRight]);
+  }, [controls, get, store, request, specimen, ms, insetRight]);
 
   useEffect(() => {
     if (!controls) return;
