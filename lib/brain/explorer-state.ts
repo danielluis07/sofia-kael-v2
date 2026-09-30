@@ -1,14 +1,15 @@
 // The Brain Explorer's whole state model (ADR 0003): one pure reducer the tool
 // rail, the panel, the Structure index and the scene all read through the store.
 import { conditionById, type ConditionId } from "@/content/conditions";
+import { clampSliceMm, type SliceAxis } from "@/lib/brain/slice";
 import { STRUCTURE_IDS, layerOf, type StructureId } from "@/lib/brain/structures";
+
+export type { SliceAxis };
 
 export type Focus =
   | { kind: "none" }
   | { kind: "structure"; id: StructureId; via?: ConditionId }
   | { kind: "condition"; id: ConditionId };
-
-export type SliceAxis = "sagittal" | "coronal" | "axial";
 
 export type CameraIntent = "home" | "frame" | "medial";
 
@@ -18,6 +19,7 @@ export type ExplorerState = {
   isolate: boolean;
   xray: boolean;
   split: boolean;
+  /** `mm` is the plane's anatomical (RAS) position on `axis`, kept while Slice is off. */
   slice: { on: boolean; axis: SliceAxis; mm: number };
   hovered: StructureId | null;
   /** `seq` increments on every requested move; the renderer owns the actual pose. */
@@ -58,6 +60,12 @@ export type ExplorerAction =
   | { type: "clearFocus" }
   /** The rail's or the Structure panel's Isolate. Does nothing without a Focus. */
   | { type: "toggleIsolate" }
+  /** The rail's Slice. */
+  | { type: "toggleSlice" }
+  /** Slice's segmented control: the plane re-centres at 0 mm on the new axis. */
+  | { type: "setSliceAxis"; axis: SliceAxis }
+  /** Slice's slider, in millimetres: rounded, and kept inside the brain. */
+  | { type: "setSliceMm"; mm: number }
   /** The rail's X-ray. */
   | { type: "toggleXray" }
   /** The rail's Split. */
@@ -103,6 +111,17 @@ export function explorerReducer(state: ExplorerState, action: ExplorerAction): E
         : { ...state, focus: { kind: "none" }, isolate: false };
     case "toggleIsolate":
       return state.focus.kind === "none" ? state : { ...state, isolate: !state.isolate, touched: true };
+    case "toggleSlice":
+      // Keeps its axis and position. Never moves the camera, and needs no Focus.
+      return { ...state, slice: { ...state.slice, on: !state.slice.on }, touched: true };
+    case "setSliceAxis":
+      return state.slice.axis === action.axis
+        ? state
+        : { ...state, slice: { ...state.slice, axis: action.axis, mm: 0 }, touched: true };
+    case "setSliceMm": {
+      const mm = clampSliceMm(state.slice.axis, action.mm);
+      return state.slice.mm === mm ? state : { ...state, slice: { ...state.slice, mm }, touched: true };
+    }
     case "toggleXray":
       // Never moves the camera, and needs no Focus.
       return { ...state, xray: !state.xray, touched: true };
@@ -181,6 +200,10 @@ export type StructureView = {
 export type ExplorerView = {
   /** Keyed by Structure: a Structure's two sides always share a look, since a Focus is bilateral. */
   structures: Readonly<Record<StructureId, StructureView>>;
+  /** The white-matter context mesh (ADR 0002): shown, and capped, only during Slice, and hidden under X-ray or Isolate. */
+  whiteMatter: boolean;
+  /** Slice's plane, which clips everything; null while Slice is off. Each Structure's `cap` decides whether its cut face is filled. */
+  slice: { axis: SliceAxis; mm: number } | null;
   /** Where the camera should go. `frame` targets are the focused Structures, where they currently sit. */
   camera: ExplorerState["camera"] & { frame: readonly StructureId[] };
 };
@@ -202,7 +225,15 @@ export function deriveView(state: ExplorerState): ExplorerView {
   const structures = Object.fromEntries(
     STRUCTURE_IDS.map((id) => [id, structureView(state, focused, id)]),
   ) as Record<StructureId, StructureView>;
-  return { structures, camera: { ...state.camera, frame: focused } };
+  const { on, axis, mm } = state.slice;
+  const isolated = state.isolate && focused.length > 0;
+  return {
+    structures,
+    // Its caps would bury the deep sections that X-ray and Isolate are there to show.
+    whiteMatter: on && !state.xray && !isolated,
+    slice: on ? { axis, mm } : null,
+    camera: { ...state.camera, frame: focused },
+  };
 }
 
 function structureView(state: ExplorerState, focused: readonly StructureId[], id: StructureId): StructureView {

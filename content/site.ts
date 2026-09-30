@@ -1,3 +1,5 @@
+import type { SliceAxis } from "@/lib/brain/slice";
+
 export type SectionLink = { id: string; label: string };
 
 export const SECTIONS = [
@@ -70,7 +72,14 @@ export type ExplorerContent = SectionContent & {
   backTo: string;
   toolsLabel: string;
   tools: { rotate: string; slice: string; split: string; xray: string; isolate: string; reset: string };
-  slice: { sagittal: string; coronal: string; axial: string; position: string };
+  slice: {
+    /** The segmented control's group label. */
+    orientation: string;
+    /** Each axis's name (also the readout's) and, beneath it, the halves it separates in plain English. */
+    axes: Record<SliceAxis, { name: string; plane: string }>;
+    /** The slider's label. */
+    position: string;
+  };
 };
 
 export const EXPLORER = {
@@ -92,9 +101,12 @@ export const EXPLORER = {
   toolsLabel: "Tools",
   tools: { rotate: "Rotate", slice: "Slice", split: "Split", xray: "X-ray", isolate: "Isolate", reset: "Reset" },
   slice: {
-    sagittal: "Sagittal (left and right)",
-    coronal: "Coronal (front and back)",
-    axial: "Axial (upper and lower)",
+    orientation: "Slice orientation",
+    axes: {
+      sagittal: { name: "Sagittal", plane: "left and right" },
+      coronal: { name: "Coronal", plane: "front and back" },
+      axial: { name: "Axial", plane: "upper and lower" },
+    },
     position: "Slice position",
   },
 } as const satisfies ExplorerContent;

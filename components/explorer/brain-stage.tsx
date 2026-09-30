@@ -12,15 +12,18 @@ import { ContactShadows, OrbitControls } from "@react-three/drei";
 import { EffectComposer, N8AO, ToneMapping } from "@react-three/postprocessing";
 import { ToneMappingMode } from "postprocessing";
 import { useExplorer, useExplorerDispatch, useExplorerStore, useExplorerView } from "@/components/explorer/explorer-store";
+import { SLICE_LAYER, buildSliceRig, type CapTone, type SliceRig } from "@/components/explorer/slice-rig";
 import type { CalloutHandle } from "@/components/explorer/structure-callout";
-import { calloutStructure, type ExplorerView, type Look } from "@/lib/brain/explorer-state";
+import { calloutStructure, deriveView, type ExplorerView, type Look } from "@/lib/brain/explorer-state";
 import { FOV, HOME_DIRECTION, SPLIT_M, ZOOM_IN, ZOOM_OUT, frameDistance, homeDistance, medialDirection } from "@/lib/brain/framing";
 import { DRACO_DECODER_PATH, SPECIMEN_URL, loadingPercent } from "@/lib/brain/specimen";
 import {
   SIDES,
+  WHITE_MATTER,
   isStructureId,
   layerOf,
   type ContextMeshExtras,
+  type PartId,
   type Side,
   type StructureId,
   type StructureMeshExtras,
@@ -37,6 +40,8 @@ export type BrainStageProps = {
   cameraMs: number;
   /** How long X-ray's cross-fade takes: `--dur-slow`, or 0 for a cut under reduced motion. */
   xrayMs: number;
+  /** Slice's hairline contours round each cut Structure (three-mesh-bvh). The mobile fallback ladder (ADR 0006) can turn them off. */
+  contours: boolean;
   /** CSS pixels on the stage's right that the Structure panel covers: the view centres in what's left. */
   insetRight: number;
   /** The leader-line callout the scene places on the hovered Structure. */
@@ -74,9 +79,13 @@ type Specimen = {
   parts: ReadonlyMap<StructureId, readonly THREE.Mesh[]>;
   /** Every mesh of each hemisphere, white matter included: Split slides the groups apart along X. */
   halves: Readonly<Record<Side, THREE.Group>>;
+  /** The white-matter context meshes, one per side: shown only during Slice. */
+  whiteMatter: readonly THREE.Mesh[];
   /** Split's slide, 0 (whole) to 1 (apart), before easing. */
   split: { value: number };
-  materials: Readonly<Record<Look, THREE.Material>>;
+  /** One set per hemisphere: each clips by its own half's copy of the Slice plane. */
+  materials: Readonly<Record<Side, Readonly<Record<Look, THREE.Material>>>>;
+  slice: SliceRig;
   /** X-ray's cross-fade, 0 (porcelain) to 1 (frost): the frost material's uniform. */
   xray: { value: number };
   dispose: () => void;
@@ -132,7 +141,15 @@ function frostMaterial(xray: { value: number }): THREE.MeshStandardMaterial {
   return material;
 }
 
-async function loadSpecimen(onProgress: (percent: number) => void): Promise<Specimen> {
+/** The Slice caps' fills (#6): a ribbon of `--porcelain-cut` round lighter white matter, the Focus in `--oxblood-deep`. */
+function sliceColors() {
+  const cut = token("--porcelain-cut");
+  // Most of the way from the cut tone to `--porcelain`, mixed as the eye sees it.
+  const white = cut.clone().convertLinearToSRGB().lerp(token("--porcelain").convertLinearToSRGB(), 0.6).convertSRGBToLinear();
+  return { cut, white, focus: token("--oxblood-deep"), frame: token("--oxblood"), contour: token("--ink-soft") };
+}
+
+async function loadSpecimen(onProgress: (percent: number) => void, contours: boolean): Promise<Specimen> {
   const draco = new DRACOLoader().setDecoderPath(DRACO_DECODER_PATH).setDecoderConfig({ type: "wasm" });
   const loader = new GLTFLoader().setDRACOLoader(draco);
   try {
@@ -140,7 +157,7 @@ async function loadSpecimen(onProgress: (percent: number) => void): Promise<Spec
       onProgress(loadingPercent(event.loaded, event.lengthComputable ? event.total : 0)),
     );
     const xray = { value: 0 };
-    const materials: Record<Look, THREE.MeshStandardMaterial> = {
+    const looks = (): Record<Look, THREE.MeshStandardMaterial> => ({
       porcelain: new THREE.MeshStandardMaterial({ color: token("--porcelain"), roughness: ROUGHNESS, metalness: 0 }),
       oxblood: new THREE.MeshStandardMaterial({ color: token("--oxblood"), roughness: ROUGHNESS, metalness: 0 }),
       // Depth-free, so the ghosts never hide the Focus or each other.
@@ -153,43 +170,58 @@ async function loadSpecimen(onProgress: (percent: number) => void): Promise<Spec
         depthWrite: false,
       }),
       frost: frostMaterial(xray),
-    };
+    });
+    const materials = { left: looks(), right: looks() };
     const geometries: THREE.BufferGeometry[] = [];
     const parts = new Map<StructureId, THREE.Mesh[]>();
-    const sided: [THREE.Mesh, Side][] = [];
+    const whiteMatter: THREE.Mesh[] = [];
+    const sided: { mesh: THREE.Mesh; part: PartId; side: Side }[] = [];
     const bounds = new THREE.Box3();
     gltf.scene.traverse((object) => {
       if (!(object instanceof THREE.Mesh)) return;
-      object.material = materials.porcelain;
       geometries.push(object.geometry);
       const extras = extrasOf(object);
-      if (extras) sided.push([object, extras.side]);
-      // White matter is context for Slice only (ADR 0002).
-      if (!extras || "context" in extras) {
+      if (!extras) {
         object.visible = false;
+        return;
+      }
+      object.material = materials[extras.side].porcelain;
+      object.userData.side = extras.side;
+      if ("context" in extras) {
+        // White matter is context for Slice only (ADR 0002).
+        object.visible = false;
+        whiteMatter.push(object);
+        sided.push({ mesh: object, part: WHITE_MATTER, side: extras.side });
         return;
       }
       bounds.expandByObject(object);
       object.userData.structure = extras.structure;
-      object.userData.side = extras.side;
+      sided.push({ mesh: object, part: extras.structure, side: extras.side });
       parts.set(extras.structure, [...(parts.get(extras.structure) ?? []), object]);
     });
     // Every mesh is already one side's, midline meshes cut at x = 0 (ADR 0002).
     const halves = { left: new THREE.Group(), right: new THREE.Group() };
     gltf.scene.add(halves.left, halves.right);
     gltf.scene.updateMatrixWorld(true);
-    for (const [mesh, side] of sided) halves[side].attach(mesh);
+    for (const { mesh, side } of sided) halves[side].attach(mesh);
+    const slice = buildSliceRig(sided, halves, sliceColors(), contours);
+    for (const side of SIDES) {
+      for (const material of Object.values(materials[side])) material.clippingPlanes = [slice.planes[side]];
+    }
     return {
       root: gltf.scene,
       size: bounds.getSize(new THREE.Vector3()).toArray(),
       floorY: bounds.min.y,
       parts,
       halves,
+      whiteMatter,
       split: { value: 0 },
       materials,
+      slice,
       xray,
       dispose() {
-        for (const material of Object.values(materials)) material.dispose();
+        for (const side of SIDES) for (const material of Object.values(materials[side])) material.dispose();
+        slice.dispose();
         for (const geometry of geometries) geometry.dispose();
       },
     };
@@ -203,6 +235,7 @@ export default function BrainStage({
   idle,
   cameraMs,
   xrayMs,
+  contours,
   insetRight,
   callout,
   onProgress,
@@ -221,7 +254,7 @@ export default function BrainStage({
   useEffect(() => {
     let cancelled = false;
     let loaded: Specimen | null = null;
-    loadSpecimen(progress).then(
+    loadSpecimen(progress, contours).then(
       (result) => {
         loaded = result;
         if (cancelled) result.dispose();
@@ -237,6 +270,8 @@ export default function BrainStage({
       cancelled = true;
       loaded?.dispose();
     };
+    // Contours are built with the specimen; the flag is fixed for the stage's life.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   if (!specimen) return null;
@@ -246,11 +281,12 @@ export default function BrainStage({
       frameloop={active ? "always" : "never"}
       dpr={[1, 2]}
       camera={{ fov: FOV, near: 0.02, far: 3, position: [...HOME_DIRECTION] }}
-      // Stencil and local clipping are ready for Slice. The composer draws every
+      // Stencil and local clipping are for Slice. The composer draws every
       // pixel, so the canvas's own antialiasing would buy nothing (#6: no MSAA).
       gl={{ alpha: true, antialias: false, stencil: true }}
-      onCreated={({ gl }) => {
+      onCreated={({ gl, camera }) => {
         gl.localClippingEnabled = true;
+        camera.layers.enable(SLICE_LAYER);
         gl.toneMapping = THREE.NeutralToneMapping;
         gl.toneMappingExposure = EXPOSURE;
       }}>
@@ -260,7 +296,9 @@ export default function BrainStage({
       <primitive object={specimen.root} />
       <Looks specimen={specimen} xrayMs={xrayMs} />
       <SplitHalves specimen={specimen} ms={cameraMs} onSliding={setSliding} />
-      {/* Baked once: the idle rotation moves the camera, not the brain. Only Split moves the brain. */}
+      {/* After SplitHalves: each half's plane follows it. */}
+      <Slicing specimen={specimen} />
+      {/* Baked once: the idle rotation moves the camera, not the brain. Only Split moves the brain. Its camera skips SLICE_LAYER. */}
       <ContactShadows
         frames={sliding ? Infinity : 1}
         position={[0, specimen.floorY - 0.004, 0]}
@@ -281,6 +319,7 @@ export default function BrainStage({
       <Gestures onGesture={onGesture} />
       <Picking specimen={specimen} pointedRef={pointedRef} />
       <CalloutAnchor specimen={specimen} pointedRef={pointedRef} callout={callout} />
+      <Precompile specimen={specimen} />
       <FirstFrame onReady={onReady} />
     </Canvas>
   );
@@ -291,8 +330,63 @@ function dress(specimen: Specimen, structures: ExplorerView["structures"]) {
     const { look } = structures[id];
     // Porcelain cortex keeps the frost until X-ray has faded back out.
     const fadingOut = look === "porcelain" && layerOf(id) === "cortex" && specimen.xray.value > 0;
-    for (const mesh of meshes) mesh.material = specimen.materials[fadingOut ? "frost" : look];
+    for (const mesh of meshes) mesh.material = specimen.materials[mesh.userData.side as Side][fadingOut ? "frost" : look];
   }
+}
+
+/** A Structure's cut face: none, the Focus in `--oxblood-deep`, or `--porcelain-cut`; the white matter's is lighter. */
+function capTone(view: ExplorerView, part: PartId): CapTone | null {
+  if (part === WHITE_MATTER) return view.whiteMatter ? "white" : null;
+  const { cap, look } = view.structures[part];
+  if (!cap) return null;
+  return look === "oxblood" ? "focus" : "cut";
+}
+
+/** Shows the white matter while Slice needs it, places the plane and caps the Structures `deriveView` says get a cut face. */
+function slice(specimen: Specimen, view: ExplorerView) {
+  for (const mesh of specimen.whiteMatter) mesh.visible = view.whiteMatter;
+  specimen.slice.set(view.slice, (part) => capTone(view, part));
+}
+
+/**
+ * Slice (ADR 0003): every Structure-side is clipped by its half's copy of the
+ * plane, which follows the halves while split.
+ */
+function Slicing({ specimen }: { specimen: Specimen }) {
+  const view = useExplorerView();
+  useLayoutEffect(() => slice(specimen, view), [specimen, view]);
+  useFrame(() => specimen.slice.follow());
+  return null;
+}
+
+/**
+ * Compiles every look and Slice shader at load (#6: otherwise the first Slice
+ * toggle stalls for seconds). The composer renders into a target, which
+ * changes the shader, so they compile for one. Materials no mesh wears yet
+ * compile on stand-ins.
+ */
+function Precompile({ specimen }: { specimen: Specimen }) {
+  const gl = useThree((state) => state.gl);
+  const scene = useThree((state) => state.scene);
+  const camera = useThree((state) => state.camera);
+  useEffect(() => {
+    const [sample] = specimen.parts.values().next().value ?? [];
+    if (!sample) return;
+    const standIns = new THREE.Group();
+    for (const side of SIDES) {
+      for (const material of Object.values(specimen.materials[side])) standIns.add(new THREE.Mesh(sample.geometry, material));
+    }
+    scene.add(standIns);
+    const target = new THREE.WebGLRenderTarget(1, 1);
+    const previous = gl.getRenderTarget();
+    gl.setRenderTarget(target);
+    // compileAsync builds every program now and only waits on the GPU afterwards.
+    const compiled = gl.compileAsync(scene, camera);
+    gl.setRenderTarget(previous);
+    scene.remove(standIns);
+    compiled.catch(() => {}).finally(() => target.dispose());
+  }, [gl, scene, camera, specimen]);
+  return null;
 }
 
 /** Steps X-ray's cross-fade toward `target`; true once it has faded back out to porcelain. */
@@ -596,19 +690,51 @@ function Gestures({ onGesture }: { onGesture: (gesture: Gesture) => void }) {
 
 const raycaster = new THREE.Raycaster();
 const ndc = new THREE.Vector2();
+/** Worn only for the length of a raycast, so the ray meets back faces too. */
+const BOTH_SIDES = new THREE.MeshBasicMaterial({ side: THREE.DoubleSide });
 
-/** The front-most pickable Structure under a client point. */
+/** While Slice is on: each half's plane, and the meshes that stop a ray without being pickable (the white matter). */
+type Cut = { planes: Readonly<Record<Side, THREE.Plane>>; occluders: readonly THREE.Mesh[] };
+
+function cutOf(specimen: Specimen, view: ExplorerView): Cut | null {
+  if (!view.slice) return null;
+  return { planes: specimen.slice.planes, occluders: view.whiteMatter ? specimen.whiteMatter : [] };
+}
+
+/**
+ * The nearest hit on `meshes` the plane keeps. Raycasts ignore clipping, so
+ * hits on the half cut away are skipped. Back faces count: a ray that meets
+ * one first came in through the cut, so it's on that Structure's cap. An
+ * occluder ends the search with nothing.
+ */
+function nearestKept(meshes: readonly THREE.Mesh[], cut: Cut): THREE.Intersection | null {
+  const all = [...meshes, ...cut.occluders];
+  const worn = all.map((mesh) => mesh.material);
+  for (const mesh of all) mesh.material = BOTH_SIDES;
+  try {
+    for (const hit of raycaster.intersectObjects(all, false)) {
+      if (cut.planes[hit.object.userData.side as Side].distanceToPoint(hit.point) < 0) continue;
+      return cut.occluders.includes(hit.object as THREE.Mesh) ? null : hit;
+    }
+    return null;
+  } finally {
+    all.forEach((mesh, k) => (mesh.material = worn[k]));
+  }
+}
+
+/** The front-most pickable Structure under a client point, cut faces included while Slice is on. */
 function pick(
   canvas: HTMLCanvasElement,
   camera: THREE.Camera,
   targets: readonly THREE.Mesh[],
+  cut: Cut | null,
   clientX: number,
   clientY: number,
 ): SurfacePoint | null {
   const rect = canvas.getBoundingClientRect();
   ndc.set(((clientX - rect.left) / rect.width) * 2 - 1, -((clientY - rect.top) / rect.height) * 2 + 1);
   raycaster.setFromCamera(ndc, camera);
-  const [hit] = raycaster.intersectObjects(targets as THREE.Mesh[], false);
+  const hit = cut ? nearestKept(targets, cut) : raycaster.intersectObjects(targets as THREE.Mesh[], false)[0];
   if (!hit) return null;
   const mesh = hit.object as THREE.Mesh;
   return { id: (mesh.userData as StructureMeshExtras).structure, mesh, local: mesh.worldToLocal(hit.point.clone()) };
@@ -623,16 +749,17 @@ function pick(
 function Picking({ specimen, pointedRef }: { specimen: Specimen; pointedRef: RefObject<SurfacePoint | null> }) {
   const canvas = useThree((state) => state.gl.domElement);
   const camera = useThree((state) => state.camera);
-  const { structures } = useExplorerView();
+  const view = useExplorerView();
   const dispatch = useExplorerDispatch();
   const targets = useMemo(
-    () => [...specimen.parts].flatMap(([id, meshes]) => (structures[id].pickable ? meshes : [])),
-    [specimen, structures],
+    () => [...specimen.parts].flatMap(([id, meshes]) => (view.structures[id].pickable ? meshes : [])),
+    [specimen, view.structures],
   );
-  const targetsRef = useRef(targets);
+  const cut = useMemo(() => cutOf(specimen, view), [specimen, view]);
+  const targetsRef = useRef({ targets, cut });
   useLayoutEffect(() => {
-    targetsRef.current = targets;
-  }, [targets]);
+    targetsRef.current = { targets, cut };
+  }, [targets, cut]);
   /** The latest hover position, raycast once per frame. */
   const pending = useRef<{ x: number; y: number } | null>(null);
 
@@ -662,7 +789,7 @@ function Picking({ specimen, pointedRef }: { specimen: Specimen; pointedRef: Ref
       presses.delete(event.pointerId);
       if (!start || multiTouch || event.button !== 0) return;
       if (Math.hypot(event.clientX - start.x, event.clientY - start.y) > DRAG_PX) return;
-      const hit = pick(canvas, camera, targetsRef.current, event.clientX, event.clientY);
+      const hit = pick(canvas, camera, targetsRef.current.targets, targetsRef.current.cut, event.clientX, event.clientY);
       if (hit) dispatch({ type: "select", id: hit.id });
     };
     const onPointerCancel = (event: PointerEvent) => presses.delete(event.pointerId);
@@ -694,7 +821,7 @@ function Picking({ specimen, pointedRef }: { specimen: Specimen; pointedRef: Ref
     const at = pending.current;
     if (!at) return;
     pending.current = null;
-    point(pick(canvas, camera, targetsRef.current, at.x, at.y));
+    point(pick(canvas, camera, targetsRef.current.targets, targetsRef.current.cut, at.x, at.y));
   });
 
   return null;
@@ -703,9 +830,10 @@ function Picking({ specimen, pointedRef }: { specimen: Specimen; pointedRef: Ref
 /**
  * A surface point to anchor the callout when the hover comes from the
  * Structure index: where a ray from the camera to the nearer side's centre
- * first meets that side, or the centre itself.
+ * first meets that side (its cut face included, while Slice is on), or the
+ * centre itself, brought onto the plane if Slice cut it away.
  */
-function anchorFor(specimen: Specimen, id: StructureId, camera: THREE.Camera): SurfacePoint | null {
+function anchorFor(specimen: Specimen, id: StructureId, camera: THREE.Camera, cut: Cut | null): SurfacePoint | null {
   const box = new THREE.Box3();
   let nearest: { mesh: THREE.Mesh; center: THREE.Vector3; distance: number } | null = null;
   for (const mesh of specimen.parts.get(id) ?? []) {
@@ -716,7 +844,9 @@ function anchorFor(specimen: Specimen, id: StructureId, camera: THREE.Camera): S
   if (!nearest) return null;
   const { mesh, center } = nearest;
   raycaster.set(camera.position, center.clone().sub(camera.position).normalize());
-  const [hit] = raycaster.intersectObject(mesh, false);
+  const hit = cut ? nearestKept([mesh], { ...cut, occluders: [] }) : raycaster.intersectObject(mesh, false)[0];
+  const plane = cut?.planes[mesh.userData.side as Side];
+  if (!hit && plane && plane.distanceToPoint(center) < 0) plane.projectPoint(center, center);
   return { id, mesh, local: mesh.worldToLocal((hit?.point ?? center).clone()) };
 }
 
@@ -745,7 +875,9 @@ function CalloutAnchor({
     const hovered = calloutStructure(store.getState());
     // The pointer's own surface point while it's on the hovered Structure; otherwise one found for it.
     const live = pointedRef.current?.id === hovered ? pointedRef.current : null;
-    if (anchor.current?.id !== hovered) anchor.current = hovered ? (live ?? anchorFor(specimen, hovered, camera)) : null;
+    if (anchor.current?.id !== hovered) {
+      anchor.current = hovered ? (live ?? anchorFor(specimen, hovered, camera, cutOf(specimen, deriveView(store.getState())))) : null;
+    }
     const point = live ?? anchor.current;
     if (point) {
       world.copy(point.local).applyMatrix4(point.mesh.matrixWorld).project(camera);

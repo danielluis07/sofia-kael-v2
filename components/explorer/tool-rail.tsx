@@ -1,6 +1,6 @@
 "use client";
 
-import { Focus, RotateCcw, ScanEye, UnfoldHorizontal, type LucideIcon } from "lucide-react";
+import { Focus, RotateCcw, ScanEye, Slice, UnfoldHorizontal, type LucideIcon } from "lucide-react";
 import { useExplorer, useExplorerDispatch } from "@/components/explorer/explorer-store";
 import { EXPLORER } from "@/content/site";
 import { cn } from "@/lib/utils";
@@ -8,15 +8,25 @@ import { cn } from "@/lib/utils";
 /**
  * The tool rail (DESIGN.md §9 "Tools"): bottom centre, a hairline-bordered
  * `--surface` bar of real buttons, each a 20px lucide icon and a mono label.
- * Toggles carry `aria-pressed`. Slice arrives with its tool.
+ * Toggles carry `aria-pressed`. Slice's own controls sit above it while it's on.
+ * Too wide for a phone, it scrolls sideways until the mobile bottom sheet replaces it.
  */
 export function ToolRail({ className }: { className?: string }) {
+  const slice = useExplorer((state) => state.slice.on);
   const split = useExplorer((state) => state.split);
   const xray = useExplorer((state) => state.xray);
   const dispatch = useExplorerDispatch();
   return (
-    <div role="group" aria-label={EXPLORER.toolsLabel} className={cn("flex border border-rule bg-surface", className)}>
-      <ToolButton icon={UnfoldHorizontal} rail pressed={split} onClick={() => dispatch({ type: "toggleSplit" })}>
+    <div role="group" aria-label={EXPLORER.toolsLabel} className={cn("flex max-w-full overflow-x-auto border [scrollbar-width:none] border-rule bg-surface", className)}>
+      <ToolButton icon={Slice} rail pressed={slice} onClick={() => dispatch({ type: "toggleSlice" })}>
+        {EXPLORER.tools.slice}
+      </ToolButton>
+      <ToolButton
+        icon={UnfoldHorizontal}
+        rail
+        pressed={split}
+        onClick={() => dispatch({ type: "toggleSplit" })}
+        className="border-l border-rule">
         {EXPLORER.tools.split}
       </ToolButton>
       <ToolButton
@@ -80,7 +90,7 @@ function ToolButton({
       aria-disabled={disabled || undefined}
       onClick={disabled ? undefined : onClick}
       className={cn(
-        "label flex items-center gap-2 text-ink hover:bg-paper-2 focus-visible:outline-offset-[-2px] aria-disabled:cursor-default aria-disabled:text-ink-soft aria-disabled:hover:bg-transparent",
+        "label flex shrink-0 items-center gap-2 whitespace-nowrap text-ink hover:bg-paper-2 focus-visible:outline-offset-[-2px] aria-disabled:cursor-default aria-disabled:text-ink-soft aria-disabled:hover:bg-transparent",
         rail ? "px-4 py-3" : "px-3 py-2.5",
         pressed && "bg-oxblood-tint text-oxblood hover:bg-oxblood-tint",
         className,

@@ -480,3 +480,145 @@ describe("calloutStructure", () => {
     expect(calloutStructure(explorerReducer(isolated, { type: "hover", id: "cerebellum" }))).toBe("cerebellum");
   });
 });
+
+describe("toggleSlice", () => {
+  test("toggles, needs no Focus, and counts as an interaction", () => {
+    const on = run({ type: "toggleSlice" });
+    expect(on.slice).toEqual({ on: true, axis: "coronal", mm: 0 });
+    expect(on.touched).toBe(true);
+    expect(explorerReducer(on, { type: "toggleSlice" }).slice.on).toBe(false);
+  });
+
+  test("never moves the camera and leaves the Focus and the other tools alone", () => {
+    const tooled = run({ type: "focusCondition", id: "migraine" }, { type: "toggleXray" }, { type: "toggleSplit" });
+    const state = explorerReducer(tooled, { type: "toggleSlice" });
+    expect(state.camera).toBe(tooled.camera);
+    expect(state).toEqual({ ...tooled, slice: { ...tooled.slice, on: true } });
+  });
+
+  test("keeps its axis and position when toggled off and on again", () => {
+    const state = run(
+      { type: "toggleSlice" },
+      { type: "setSliceAxis", axis: "sagittal" },
+      { type: "setSliceMm", mm: -22 },
+      { type: "toggleSlice" },
+      { type: "toggleSlice" },
+    );
+    expect(state.slice).toEqual({ on: true, axis: "sagittal", mm: -22 });
+  });
+
+  test("survives clearing the Focus; Reset turns it off, back to Coronal 0 mm", () => {
+    const state = run({ type: "select", id: "pons" }, { type: "toggleSlice" }, { type: "setSliceMm", mm: 30 }, { type: "clearFocus" });
+    expect(state.slice).toEqual({ on: true, axis: "coronal", mm: 30 });
+    expect(explorerReducer(state, { type: "reset" }).slice).toEqual({ on: false, axis: "coronal", mm: 0 });
+  });
+});
+
+describe("setSliceAxis", () => {
+  test("changes the axis and re-centres the plane at 0 mm", () => {
+    const state = run({ type: "toggleSlice" }, { type: "setSliceMm", mm: -40 }, { type: "setSliceAxis", axis: "axial" });
+    expect(state.slice).toEqual({ on: true, axis: "axial", mm: 0 });
+  });
+
+  test("the axis already set changes nothing", () => {
+    const state = run({ type: "toggleSlice" }, { type: "setSliceMm", mm: -40 });
+    expect(explorerReducer(state, { type: "setSliceAxis", axis: "coronal" })).toBe(state);
+  });
+
+  test("counts as an interaction, and never moves the camera", () => {
+    const state = explorerReducer(initialExplorerState, { type: "setSliceAxis", axis: "sagittal" });
+    expect(state.touched).toBe(true);
+    expect(state.camera).toBe(initialExplorerState.camera);
+  });
+});
+
+describe("setSliceMm", () => {
+  test("moves the plane in whole millimetres, inside the brain's bounds for the axis", () => {
+    expect(run({ type: "setSliceMm", mm: -22.4 }).slice.mm).toBe(-22);
+    expect(run({ type: "setSliceAxis", axis: "sagittal" }, { type: "setSliceMm", mm: 500 }).slice.mm).toBe(68);
+    expect(run({ type: "setSliceMm", mm: -500 }).slice.mm).toBe(-90);
+  });
+
+  test("the same position changes nothing", () => {
+    const state = run({ type: "setSliceMm", mm: 12 });
+    expect(explorerReducer(state, { type: "setSliceMm", mm: 12.2 })).toBe(state);
+  });
+
+  test("counts as an interaction, and never moves the camera", () => {
+    const state = explorerReducer(initialExplorerState, { type: "setSliceMm", mm: 5 });
+    expect(state.touched).toBe(true);
+    expect(state.camera).toBe(initialExplorerState.camera);
+  });
+});
+
+describe("deriveView: Slice", () => {
+  const sliced = (...actions: ExplorerAction[]) => deriveView(run({ type: "toggleSlice" }, ...actions));
+  const capped = (view: ReturnType<typeof deriveView>) => STRUCTURE_IDS.filter((id) => view.structures[id].cap);
+
+  test("the plane is there only while Slice is on", () => {
+    expect(deriveView(initialExplorerState).slice).toBeNull();
+    expect(sliced({ type: "setSliceAxis", axis: "axial" }, { type: "setSliceMm", mm: 18 }).slice).toEqual({ axis: "axial", mm: 18 });
+    expect(deriveView(run({ type: "setSliceMm", mm: 18 })).slice).toBeNull();
+  });
+
+  test("white matter is shown, and capped, only during Slice", () => {
+    expect(deriveView(initialExplorerState).whiteMatter).toBe(false);
+    expect(sliced().whiteMatter).toBe(true);
+  });
+
+  test("with nothing else on, every Structure is capped", () => {
+    expect(capped(sliced())).toEqual([...STRUCTURE_IDS]);
+  });
+
+  test("the Focus is capped (in oxblood) along with the porcelain", () => {
+    const view = sliced({ type: "select", id: "thalamus" });
+    expect(view.structures.thalamus).toEqual({ look: "oxblood", cap: true, pickable: true });
+    expect(capped(view)).toEqual([...STRUCTURE_IDS]);
+  });
+
+  test("under X-ray the frosted cortex gets no caps and the white matter hides; deep Structures stay capped", () => {
+    const view = sliced({ type: "toggleXray" });
+    expect(view.whiteMatter).toBe(false);
+    expect(capped(view)).toEqual(STRUCTURE_IDS.filter((id) => layerOf(id) === "deep"));
+  });
+
+  test("under X-ray a focused cortical Structure keeps its cap", () => {
+    const view = sliced({ type: "toggleXray" }, { type: "select", id: "insula" });
+    expect(view.structures.insula.cap).toBe(true);
+    expect(view.structures["frontal-lobe"].cap).toBe(false);
+  });
+
+  test("under Isolate only the Focus is capped, and the white matter hides", () => {
+    const view = sliced({ type: "focusCondition", id: "parkinsons-disease" });
+    expect(view.whiteMatter).toBe(false);
+    expect(capped(view)).toEqual(["basal-ganglia", "substantia-nigra"]);
+  });
+
+  test("an Isolate flag without a Focus hides nothing", () => {
+    const view = deriveView({ ...run({ type: "toggleSlice" }), isolate: true });
+    expect(view.whiteMatter).toBe(true);
+    expect(capped(view)).toEqual([...STRUCTURE_IDS]);
+  });
+
+  test("turning Isolate off brings the white matter and the caps back", () => {
+    const view = sliced({ type: "focusCondition", id: "ataxia" }, { type: "toggleIsolate" });
+    expect(view.whiteMatter).toBe(true);
+    expect(capped(view)).toEqual([...STRUCTURE_IDS]);
+  });
+
+  test("Split changes no caps, alone or with X-ray and Isolate", () => {
+    for (const tools of [[], [{ type: "toggleXray" }], [{ type: "select", id: "pons" }, { type: "toggleIsolate" }, { type: "toggleXray" }]] as ExplorerAction[][]) {
+      const whole = sliced(...tools);
+      const split = sliced(...tools, { type: "toggleSplit" });
+      expect(split.structures).toEqual(whole.structures);
+      expect(split.whiteMatter).toBe(whole.whiteMatter);
+      expect(split.slice).toEqual(whole.slice);
+    }
+  });
+
+  test("Slice changes no looks or picking", () => {
+    for (const tools of [[], [{ type: "toggleXray" }], [{ type: "focusCondition", id: "migraine" }]] as ExplorerAction[][]) {
+      expect(sliced(...tools).structures).toEqual(deriveView(run(...tools)).structures);
+    }
+  });
+});

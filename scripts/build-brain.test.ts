@@ -2,6 +2,7 @@ import { beforeAll, describe, expect, test } from "bun:test";
 import { NodeIO, type Document } from "@gltf-transform/core";
 import { KHRDracoMeshCompression } from "@gltf-transform/extensions";
 import draco3d from "draco3dgltf";
+import { SLICE_RANGE } from "@/lib/brain/slice";
 import { SIDES, STRUCTURE_IDS, WHITE_MATTER, meshName, type PartId } from "@/lib/brain/structures";
 import { OUTPUT } from "./build-brain";
 
@@ -86,5 +87,8 @@ describe("public/models/brain.glb", () => {
       expect(max[k] - min[k]).toBeGreaterThan(0.12);
       expect(max[k] - min[k]).toBeLessThan(0.2);
     }
+    // Slice's slider spans the bounds in whole millimetres: sagittal on X, axial on Y, coronal on Z.
+    const inside = (k: number) => ({ min: Math.ceil(min[k] * 1000), max: Math.floor(max[k] * 1000) });
+    expect(SLICE_RANGE).toEqual({ sagittal: inside(0), coronal: inside(2), axial: inside(1) });
   });
 });

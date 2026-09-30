@@ -17,6 +17,10 @@ import { cn } from "@/lib/utils";
 // `ssr: false` code-splits only from a client file (#2), which keeps the 3D chunk out of the initial route.
 const BrainStage = dynamic(() => import("@/components/explorer/brain-stage"), { ssr: false });
 
+/** Slice's controls (and Base UI's slider) load with the scene: they only show once Slice is on. */
+const loadSliceControls = () => import("@/components/explorer/slice-controls").then((module) => module.SliceControls);
+const SliceControls = dynamic(loadSliceControls, { ssr: false });
+
 /** idle: not near yet · loading: fetching the GLB · ready: first frame on screen · fallback: no WebGL2 or the load failed. */
 type Phase = "idle" | "loading" | "ready" | "fallback";
 
@@ -26,6 +30,13 @@ const PANEL_DOCKED = "(min-width: 64rem)";
 
 /** `--dur-slow` (DESIGN.md §7): X-ray's cross-fade to frost. */
 const XRAY_MS = 700;
+
+/**
+ * Slice's hairline contours (three-mesh-bvh). On by default; the last step of
+ * the mobile fallback ladder (ADR 0006) turns them off on phones if the
+ * benchmark falls short.
+ */
+const SLICE_CONTOURS = true;
 
 /** How far ahead of the viewport the scene starts loading. */
 const LOAD_AHEAD = "100% 0px";
@@ -47,6 +58,7 @@ export function ExplorerStage() {
   const reducedMotion = useReducedMotion();
   const callout = useRef<CalloutHandle>(null);
   const panelOpen = useExplorer((state) => state.focus.kind !== "none");
+  const sliceOn = useExplorer((state) => state.slice.on);
   const panelDocked = useMediaQuery(PANEL_DOCKED, true);
   const idle = !touched && !reducedMotion;
   const cameraMs = reducedMotion ? 0 : CAMERA_MS;
@@ -95,6 +107,11 @@ export function ExplorerStage() {
   const ready = phase === "ready";
   const fail = () => setPhase("fallback");
 
+  // Fetched alongside the specimen, so the first Slice toggle doesn't wait on it.
+  useEffect(() => {
+    if (live) void loadSliceControls();
+  }, [live]);
+
   return (
     <div
       ref={stageRef}
@@ -127,6 +144,7 @@ export function ExplorerStage() {
                 idle={ready && idle}
                 cameraMs={cameraMs}
                 xrayMs={xrayMs}
+                contours={SLICE_CONTOURS}
                 insetRight={panelOpen && panelDocked ? PANEL_W : 0}
                 callout={callout}
                 onProgress={setPercent}
@@ -157,6 +175,8 @@ export function ExplorerStage() {
       <StructureIndex
         className={cn(
           "absolute top-12 right-(--gutter) max-h-[calc(100%-9rem)] transition-[right] duration-(--dur-base) ease-out md:top-16",
+          // Clear of Slice's controls, which stack above the rail.
+          sliceOn && "max-h-[calc(100%-12.5rem)]",
           panelOpen && "lg:right-[calc(var(--panel-w)+1.5rem)]",
         )}
       />
@@ -165,9 +185,10 @@ export function ExplorerStage() {
       {phase === "fallback" ? null : (
         <div
           className={cn(
-            "pointer-events-none absolute inset-x-0 bottom-6 z-20 flex justify-center px-(--gutter) transition-[right] duration-(--dur-base) ease-out",
+            "pointer-events-none absolute inset-x-0 bottom-6 z-20 flex flex-col items-center gap-2 px-(--gutter) transition-[right] duration-(--dur-base) ease-out",
             panelOpen && "lg:right-(--panel-w)",
           )}>
+          {sliceOn ? <SliceControls className="pointer-events-auto max-w-full" /> : null}
           <ToolRail className="pointer-events-auto" />
         </div>
       )}
