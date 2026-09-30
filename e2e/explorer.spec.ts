@@ -73,7 +73,12 @@ test.describe("on a phone", () => {
     await expect(stage(page)).toHaveAttribute("data-specimen", "idle");
     expect(glbRequested).toBe(false);
 
-    await page.mouse.wheel(0, 400);
+    // Approach the stage without assuming the height of the preceding sections.
+    // Keep it below the viewport, but within the observer's loading margin.
+    const scrollDistance = await stage(page).evaluate((element) =>
+      element.getBoundingClientRect().top - window.innerHeight - 100,
+    );
+    await page.mouse.wheel(0, scrollDistance);
     await expect(stage(page)).not.toHaveAttribute("data-specimen", "idle");
   });
 });

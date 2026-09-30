@@ -59,11 +59,13 @@ shadcn stays limited to `Button`.
 
 ## Portraits
 
+Amended on 2026-09-30 for #31: both sections now use AI-generated portraits of the fictional Dr. Kael, guided by the supplied identity reference. At the user's request the hero has a transparent background and sits directly on `--paper`; empty slots still use `--paper-2`. The hero portrait is immediately visible rather than revealed, so the entrance animation does not delay LCP. About uses a seated 3:4 portrait with a neutral background. Generation prompts are recorded in `docs/hero-portrait.md` and `docs/about-portrait.md`.
+
 - **No photos until the AI portraits exist (DESIGN.md §11).** Until then, each portrait slot is an empty frame: a sharp `--paper-2` block at the portrait's crop (hero 4:5, About 3:4) with one mono `label` caption, e.g. "Portrait of Dr. Kael · forthcoming". The hero's decorative leader-line callout anchors to the frame just as it would to a photo. The site can go public like this, because nobody's face stands in for Dr. Kael.
 - **`content/portraits.ts`** exports `{ hero, about }`, each either `{ src, alt }` (a static import from `content/portraits/`) or `null`. A `Portrait` component renders the image when it's there and the frame otherwise. Portraits get their own module, not `content/site.ts`, because the client Explorer imports `SECTIONS` from `site.ts` and shouldn't pull in image metadata.
 - **The frame isn't a `placeholder()`.** It's a finished, shippable state, so the remaining-placeholders count doesn't include it. The portrait effort adds the files and fills in the two entries, and no config changes.
 - **Rendering with `next/image`** (once the files exist):
-  - hero: `preload` (Next 16 replaces `priority`), `sizes="(min-width: 768px) 40vw, 100vw"`;
+  - hero: `loading="eager"` and `fetchPriority="high"`, following the installed Next image guide's preference over `preload` for a discoverable hero image; responsive `sizes` capped at 480px on wide screens, then `40vw` on desktop and `100vw` on mobile;
   - About: lazy (the default);
   - both: `placeholder="empty"` on the same `--paper-2` frame, because a blur blob doesn't suit the flat page;
   - no `remotePatterns`, and the default `images.qualities` (`[75]`).

@@ -50,7 +50,7 @@ Light theme only. There is no dark mode; strip the scaffold's `.dark` tokens.
 
 | Role      | Family                                  | Notes                                                                                                    |
 | --------- | --------------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| Display   | **Instrument Serif** (400, plus italic) | Headlines, Structure names, pull quotes, wordmark. It has one weight, so hierarchy comes from size only. |
+| Display   | **Instrument Serif** (400, plus italic) | Headlines, Structure names, pull quotes, wordmark. |
 | Body / UI | **Geist** (300–600)                     | Paragraphs, buttons, form fields, navigation                                                             |
 | Utility   | **Geist Mono** (400–500)                | Eyebrows, labels, leader-line captions, Latin names (italic), coordinates, years                         |
 
@@ -60,7 +60,7 @@ Load through `next/font/google` in `fonts/index.ts`. Remove Inter.
 
 | Token        | Size                       | Line height | Tracking           | Face                                                 |
 | ------------ | -------------------------- | ----------- | ------------------ | ---------------------------------------------------- |
-| `display-xl` | `clamp(56px, 8vw, 128px)`  | 0.95        | −0.015em           | Serif. Hero headline only.                           |
+| `display-xl` | `clamp(40px, 6vw, 88px)`   | 1.05        | −0.035em           | Instrument Serif 400. Hero headline only.            |
 | `display-l`  | `clamp(40px, 5.5vw, 80px)` | 1.0         | −0.015em           | Serif. Section headlines.                            |
 | `display-m`  | `clamp(32px, 3.5vw, 44px)` | 1.05        | −0.01em            | Serif. Structure name, Condition names, pull quotes. |
 | `body-l`     | 19px                       | 1.6         | 0                  | Geist 400. Ledes.                                    |
@@ -74,7 +74,7 @@ Load through `next/font/google` in `fonts/index.ts`. Remove Inter.
 - Headlines use `text-wrap: balance`. Running text stays at most about 65ch wide.
 - Italic serif in `--oxblood` marks the single emphasized word or phrase in a headline, e.g. "Clear answers for the brain's _hardest_ questions."
 - Numbers that align (years, coordinates, hours) use `tabular-nums`.
-- Never set body text in the serif, and never set headlines in Geist.
+- Never set body text in the serif. Headlines use Instrument Serif; the hero has no inline accents.
 
 ---
 
@@ -144,7 +144,7 @@ A sticky top bar on `--paper` with a hairline bottom border that appears after s
 
 ### 1. Hero
 
-- The headline in `display-xl` spans roughly columns 1–7, with one oxblood italic word.
+- The headline spans roughly columns 1–7 in Instrument Serif 400, `clamp(40px, 6vw, 88px)`, line height 1.05 and tracking −0.035em. Use one plain sentence with no italic or colored accent word and no eyebrow. The hero uses the About headline's font with the simpler treatment requested in the supplied typography references. Do not mention a location in the hero headline or lede.
 - Below it: a one-paragraph `body-l` lede, the primary CTA "Book a consultation", and a secondary underlined link "Explore the brain" that scrolls to the Brain Explorer.
 - A tall 4:5 **portrait of Dr. Kael** sits in columns 8–12, carrying a decorative leader-line callout.
 - The hero is sized to its content, not locked to 100vh.

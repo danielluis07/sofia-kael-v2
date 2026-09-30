@@ -8,7 +8,7 @@ All site copy and content data are typed TS modules under a root `content/` dire
 - **MDX or Markdown per Structure/Condition.** This suits long prose, but the copy is 2–3 sentences, and the client-only Explorer would need it serialized through props.
 - **One record per Structure in `lib/brain/`, holding facts and copy together.** The build script would import prose, and every copy edit would touch the file that feeds the GLB.
 - **Inline copy in section components.** The final copy pass would then mean editing JSX in a dozen places.
-- **Markup in strings (`*word*`) or `.tsx` content holding ReactNodes.** Only the hero headline needs inline emphasis, so a structured field beats a parser.
+- **Markup in strings (`*word*`) or `.tsx` content holding ReactNodes.** The original hero used a structured emphasis field; the current hero uses a plain string. Neither needs a parser or JSX in the content module.
 
 ## Modules
 
@@ -24,7 +24,7 @@ All site copy and content data are typed TS modules under a root `content/` dire
 - **The reverse map is derived, never authored:** `conditionsForStructure(id)` returns the Conditions that list a Structure, in Conditions order. It feeds the Structure panel's chips.
 - **`content/site.ts`** holds everything else:
   - **`SECTIONS`**: the five nav anchors (`{ id, label }`: About, Conditions, Brain Explorer, First visit, Contact). The nav, the mobile sheet, the footer, each section's `id` and the deep-link code all read it; nothing hard-codes `#brain-explorer`.
-  - **One typed object per section**, with plain strings only. The hero headline is `{ before, accent, after }` for its one oxblood italic word. Any other italic, like the pull quote, is styled by its component.
+  - **One typed object per section**, with plain strings only. The hero headline is a plain string. Amended on 2026-09-30 following the supplied typography references: the hero no longer splits out an italic accent or renders an eyebrow. The pull quote's italic is styled by its component.
   - **List-like content is typed:**
     - training: `{ years, text }`
     - publications: `{ title, venue, year }`
