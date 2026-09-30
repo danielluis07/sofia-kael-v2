@@ -64,9 +64,9 @@
   --font-heading:
     var(--font-instrument-serif), Georgia, "Times New Roman", serif;
 
-  --text-display-xl: clamp(3.5rem, 8vw, 8rem);
-  --text-display-xl--line-height: 0.95;
-  --text-display-xl--letter-spacing: -0.015em;
+  --text-display-xl: clamp(2.5rem, 6vw, 5.5rem);
+  --text-display-xl--line-height: 1.05;
+  --text-display-xl--letter-spacing: -0.035em;
   --text-display-l: clamp(2.5rem, 5.5vw, 5rem);
   --text-display-l--line-height: 1;
   --text-display-l--letter-spacing: -0.015em;
@@ -215,10 +215,6 @@
     background: var(--oxblood-tint);
     color: var(--oxblood);
   }
-  :focus-visible {
-    outline: 2px solid var(--oxblood);
-    outline-offset: 3px;
-  }
   button:not(:disabled),
   [role="button"]:not(:disabled) {
     cursor: pointer;
@@ -237,6 +233,12 @@
       animation-duration: auto !important;
     }
   }
+}
+
+/* Keep the shared focus ring above utility-layer outline colors. */
+:focus-visible {
+  outline: 2px solid var(--oxblood);
+  outline-offset: 3px;
 }
 
 /*

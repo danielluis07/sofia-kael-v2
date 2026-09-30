@@ -26,8 +26,7 @@ export const NAV = {
 } as const satisfies Record<string, string>;
 
 export type HeroContent = {
-  eyebrow: string;
-  headline: { before: string; accent: string; after: string };
+  headline: string;
   lede: string;
   consultation: string;
   explore: string;
@@ -35,13 +34,8 @@ export type HeroContent = {
 };
 
 export const HERO = {
-  eyebrow: "Dr. Sofia Kael · Neurologist",
-  headline: {
-    before: placeholder("Lorem ipsum dolor sit "),
-    accent: placeholder("amet"),
-    after: placeholder(", consectetur adipiscing elit."),
-  },
-  lede: placeholder("Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed vitae sapien ut felis tempor commodo."),
+  headline: "General neurological care.",
+  lede: "Dr. Sofia Kael takes time to listen, explain what symptoms may mean, and discuss the next steps with you.",
   consultation: NAV.consultation,
   explore: "Explore the brain",
   portraitCallout: "Dr. Sofia Kael, MD · Neurologist",
@@ -49,10 +43,10 @@ export const HERO = {
 
 export const ABOUT = {
   eyebrow: SECTIONS[0].label,
-  headline: placeholder("Lorem ipsum dolor sit amet."),
-  lede: placeholder("Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec luctus sem at neque facilisis, vitae faucibus arcu posuere."),
-  biography: placeholder("Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla facilisi. Praesent vitae purus non erat faucibus dignissim."),
-  pullQuote: placeholder("Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed ut neque vitae erat commodo tincidunt."),
+  headline: "Time to listen. Space to understand.",
+  lede: "Dr. Kael helps people make sense of symptoms affecting the brain and nervous system, from a first concern to ongoing care.",
+  biography: "Dr. Sofia Kael is a general clinical neurologist at Kael Neurology in Boston. Her consultations begin with a conversation about symptoms and how they affect everyday life. She brings the history and neurological examination together, explains when further tests may help, and discusses care options in plain language.",
+  pullQuote: "A careful conversation is where understanding begins.",
 } as const satisfies SectionContent & { biography: string; pullQuote: string };
 
 export const CONDITIONS_SECTION = {
