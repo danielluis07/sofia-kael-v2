@@ -166,6 +166,8 @@
   /* Layout */
   --gutter: clamp(16px, 4vw, 56px);
   --section-y: clamp(96px, 12vw, 192px);
+  --col-gap: clamp(16px, 2vw, 32px);
+  --nav-h: 4.5rem;
 }
 
 /* Layout helpers — DESIGN.md §4 */
@@ -199,6 +201,7 @@
   }
   html {
     @apply font-sans;
+    scroll-behavior: smooth;
   }
   body {
     @apply bg-background text-foreground text-body;
@@ -229,16 +232,50 @@
       transition-duration: 0.01ms !important;
       scroll-behavior: auto !important;
     }
+    /* The nav hairline is a scroll state, not motion. Same layer, higher specificity. */
+    .site-nav {
+      animation-duration: auto !important;
+    }
   }
 }
 
-@keyframes rise-in {
+/*
+ * Nav hairline (ADR 0005 "Navigation"): always on, and faded in over the first
+ * 16px of scroll where scroll-driven animations exist.
+ */
+@supports (animation-timeline: scroll()) {
+  .site-nav {
+    animation: nav-hairline linear both;
+    animation-timeline: scroll(root);
+    animation-range: 0 16px;
+  }
+}
+
+@keyframes nav-hairline {
   from {
-    opacity: 0;
-    transform: translateY(12px);
+    border-bottom-color: transparent;
   }
   to {
+    border-bottom-color: var(--rule);
+  }
+}
+
+/* Reveal (ADR 0005): only hidden once the inline script has added `.reveal`. */
+.reveal [data-reveal]:not([data-revealed]) {
+  opacity: 0;
+  transform: translateY(12px);
+}
+
+[data-reveal] {
+  transition:
+    opacity var(--dur-slow) var(--ease-out),
+    transform var(--dur-slow) var(--ease-out);
+  transition-delay: calc(min(var(--reveal-i, 0), 5) * 60ms);
+}
+
+@media print {
+  .reveal [data-reveal] {
     opacity: 1;
-    transform: translateY(0);
+    transform: none;
   }
 }

@@ -11,6 +11,10 @@ export const SECTIONS = [
 ] as const satisfies readonly SectionLink[];
 
 export type SectionId = (typeof SECTIONS)[number]["id"];
+
+export function sectionHref(id: SectionId) {
+  return `#${id}` as const;
+}
 export type SectionContent = { eyebrow: string; headline: string; lede: string };
 
 export const NAV = {
@@ -182,6 +186,7 @@ export const CONTACT = {
 export const FOOTER = {
   wordmark: NAV.wordmark,
   navigationLabel: "Footer navigation",
+  modelCredits: "Model credits",
   attribution: "Brain model: Z-Anatomy – The libre 3D atlas of anatomy, and BodyParts3D (DBCLS), licensed CC BY-SA 4.0.",
   disclaimer: "Dr. Sofia Kael and Kael Neurology are fictional. This site is a design project and does not provide medical advice.",
 } as const satisfies Record<string, string>;
