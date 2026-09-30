@@ -33,10 +33,11 @@ All site copy and content data are typed TS modules under a root `content/` dire
 
 ## Placeholders and the final copy pass
 
-Placeholder copy is wrapped in `placeholder("Lorem…")`, an identity function from `content/placeholder.ts`. Fictional institutions and journals are wrapped too, so the final pass re-checks each one against DESIGN.md §6's "never real" rule. `bun test` covers four things:
+The final copy pass is complete. Content modules contain plain strings, and the temporary placeholder helper is removed. Fictional institutions, hospitals and journals are checked against DESIGN.md §8's "never real" rule; the review notes list each name and the checks performed. `bun test` covers:
 
-- **Remaining placeholders:** it lists the placeholders that remain, so what's left is a count rather than a grep for "lorem".
-- **Explorer copy:** it fails if any Structure or Condition copy is a placeholder. Brain Explorer copy is real English from the start.
+- **Remaining placeholders:** the count must be zero across content modules. The test checks for placeholder calls and unmarked filler text.
+- **Voice:** site, Structure and Condition copy cannot contain DESIGN.md §12's banned words or exclamation marks.
+- **Explorer copy:** descriptions are nonempty and contain two or three sentences. Condition one-liners contain 10–14 words.
 - **Structures without Conditions:** it pins the Structures allowed to have no Condition (Insula, Postcentral gyrus, Cingulate gyrus, Hypothalamus). Their Structure panel omits the "Conditions Dr. Kael treats here" block, and any other orphan is a mistake.
 - **Id uniqueness:** Condition ids are unique and URL-safe.
 

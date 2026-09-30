@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
+import { readFileSync } from "node:fs";
 import { CONDITIONS, conditionsForStructure } from "@/content/conditions";
-import { isPlaceholder, placeholder } from "@/content/placeholder";
 import * as site from "@/content/site";
 import { STRUCTURES } from "@/content/structures";
 import { STRUCTURE_IDS } from "@/lib/brain/structures";
@@ -14,18 +14,20 @@ function stringsIn(value: unknown, path: string): { path: string; text: string }
 }
 
 describe("content integrity (ADR 0004)", () => {
-  test("lists remaining placeholders by field, including repeated text", () => {
-    const copy = stringsIn(site, "site");
-    const remaining = copy.filter(({ text }) => isPlaceholder(text));
-    console.info(`Remaining placeholders: ${remaining.length}\n${remaining.map(({ path }) => path).join("\n")}`);
-    // A finished copy pass can leave zero placeholders. Unmarked lorem is always an error.
-    expect(copy.filter(({ text }) => /\b(lorem|ipsum)\b/i.test(text) && !isPlaceholder(text))).toEqual([]);
-    // Fictional institutions and journals stay marked for review even after
-    // their draft copy replaces lorem (ADR 0004).
-    for (const { text } of remaining) expect(text.trim().length).toBeGreaterThan(0);
-    const text = "Lorem ipsum identity check";
-    expect(placeholder(text)).toBe(text);
-    expect(stringsIn({ first: text, second: text }, "fixture").filter(({ text }) => isPlaceholder(text))).toHaveLength(2);
+  test("remaining placeholder count is zero across content modules", () => {
+    const modules = [...new Bun.Glob("**/*.ts").scanSync({ cwd: import.meta.dir })]
+      .filter((file) => !file.endsWith(".test.ts"));
+    const remaining = modules.filter((file) =>
+      /\bplaceholder\s*\(/.test(readFileSync(`${import.meta.dir}/${file}`, "utf8")),
+    );
+    expect(remaining).toHaveLength(0);
+    const copy = stringsIn({ site, STRUCTURES, CONDITIONS }, "content");
+    expect(copy.filter(({ text }) => /\b(lorem|ipsum)\b/i.test(text))).toEqual([]);
+  });
+
+  test("copy avoids the words and exclamation marks banned by DESIGN.md", () => {
+    const copy = stringsIn({ site, STRUCTURES, CONDITIONS }, "content");
+    expect(copy.filter(({ text }) => /cutting-edge|state-of-the-art|holistic|journey|world-class|!/i.test(text))).toEqual([]);
   });
 
   test("Explorer copy is complete and never a placeholder", () => {
@@ -33,7 +35,6 @@ describe("content integrity (ADR 0004)", () => {
     const copy = stringsIn({ STRUCTURES, CONDITIONS, EXPLORER: site.EXPLORER }, "explorer");
     for (const { text } of copy) {
       expect(text.trim().length).toBeGreaterThan(0);
-      expect(isPlaceholder(text)).toBe(false);
       expect(text).not.toMatch(/\b(lorem|ipsum)\b/i);
     }
     for (const description of [

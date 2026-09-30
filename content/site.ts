@@ -1,5 +1,3 @@
-import { placeholder } from "@/content/placeholder";
-
 export type SectionLink = { id: string; label: string };
 
 export const SECTIONS = [
@@ -43,16 +41,16 @@ export const HERO = {
 
 export const ABOUT = {
   eyebrow: SECTIONS[0].label,
-  headline: "Time to listen. Space to understand.",
+  headline: "Neurological care with time for questions.",
   lede: "Dr. Kael helps people make sense of symptoms affecting the brain and nervous system, from a first concern to ongoing care.",
-  biography: "Dr. Sofia Kael is a general clinical neurologist at Kael Neurology in Boston. Her consultations begin with a conversation about symptoms and how they affect everyday life. She brings the history and neurological examination together, explains when further tests may help, and discusses care options in plain language.",
-  pullQuote: "A careful conversation is where understanding begins.",
+  biography: "Dr. Sofia Kael is a general clinical neurologist at Kael Neurology in Boston. Her consultations begin with a conversation about symptoms and how they affect everyday life. She reviews your medical history and examines how your nervous system is working. Dr. Kael explains when further tests may help and discusses care options in plain language.",
+  pullQuote: "A careful conversation helps make sense of symptoms.",
 } as const satisfies SectionContent & { biography: string; pullQuote: string };
 
 export const CONDITIONS_SECTION = {
   eyebrow: SECTIONS[1].label,
-  headline: placeholder("Lorem ipsum dolor sit amet, consectetur."),
-  lede: placeholder("Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer vitae justo at nulla consequat tincidunt."),
+  headline: "Conditions Dr. Kael treats.",
+  lede: "Dr. Kael provides care for the Conditions below. Read about their symptoms and select 'See it in the brain' to explore the Structures involved.",
   seeInBrain: "See it in the brain",
   structuresLabel: "Structures",
 } as const satisfies SectionContent & { seeInBrain: string; structuresLabel: string };
@@ -120,19 +118,19 @@ export type Publication = { title: string; venue: string; year: string };
 
 export const CREDENTIALS = {
   eyebrow: "Credentials & research",
-  headline: "A foundation in clinical neurology.",
+  headline: "Training and research in clinical neurology.",
   lede: "Dr. Kael’s training and research focus on careful assessment and clear communication in everyday neurological care.",
   trainingLabel: "Training & affiliations",
   trainingCallout: "Clinical practice & research",
   publicationsLabel: "Selected publications",
   training: [
-    { years: "2006–2010", text: placeholder("Doctor of Medicine, Aldermere School of Medicine.") },
-    { years: "2010–2014", text: placeholder("Neurology residency, Northmere Teaching Hospital.") },
-    { years: "2014–present", text: placeholder("General clinical neurology, Kael Neurology. Research affiliate, Bellwick Institute for Neurological Studies.") },
+    { years: "2006–2010", text: "Doctor of Medicine, Talvenwick School of Medicine." },
+    { years: "2010–2014", text: "Neurology residency, Orseldane Teaching Hospital." },
+    { years: "2014–present", text: "General clinical neurology, Kael Neurology. Research affiliate, Veylford Institute for Neurological Studies." },
   ],
   publications: [
-    { title: "Discussing uncertainty in the first neurological consultation", venue: placeholder("Aldermere Journal of Clinical Neurology"), year: "2023" },
-    { title: "Symptom diaries in the assessment of recurring headache", venue: placeholder("Bellwick Review of Neurological Practice"), year: "2021" },
+    { title: "Discussing uncertainty in the first neurological consultation", venue: "Talvenwick Journal of Clinical Neurology", year: "2023" },
+    { title: "Symptom diaries in the assessment of recurring headache", venue: "Veylford Review of Neurological Practice", year: "2021" },
   ],
 } as const satisfies SectionContent & {
   trainingLabel: string;
@@ -153,7 +151,7 @@ export type ContactFormContent = {
 export const CONTACT = {
   eyebrow: SECTIONS[4].label,
   headline: "Start with a conversation.",
-  lede: "Tell Dr. Kael what brings you here and when a call would suit you. Kael Neurology will help you plan your first visit.",
+  lede: "Tell Dr. Kael about your concerns and when a call would suit you. Kael Neurology will help you arrange your first visit.",
   addressLabel: "Address",
   addressLines: ["24 Aldermere Lane, Suite 300", "Boston, MA 02116"],
   phoneLabel: "Phone",
