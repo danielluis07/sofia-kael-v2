@@ -15,12 +15,28 @@ test("without WebGL the stage stays on the line drawing and the text description
   await page.locator("#brain-explorer").scrollIntoViewIfNeeded();
   const stage = page.locator("[data-specimen]");
   await expect(stage).toHaveAttribute("data-specimen", "fallback");
-  await expect(stage.locator("svg")).toBeVisible();
+  await expect(stage.getByTestId("specimen-outline")).toBeVisible();
   await expect(
     page.getByText("Explore the brain using the Structure index. Each Structure has a description and a list of related Conditions."),
   ).toBeVisible();
   await expect(page.getByRole("img", { name: /^An interactive three-dimensional brain\./ })).toBeAttached();
   await expect(page.locator("#brain-explorer canvas")).toHaveCount(0);
   expect(glbRequested).toBe(false);
+  expect(errors).toEqual([]);
+});
+
+test("without WebGL the Structure index and panel still work as text, and ?structure= opens the right panel", async ({ page }) => {
+  const errors: Error[] = [];
+  page.on("pageerror", (error) => errors.push(error));
+  await page.goto("/?structure=pons#brain-explorer");
+  await expect(page.locator("[data-specimen]")).toHaveAttribute("data-specimen", "fallback");
+  await expect(page.getByRole("complementary", { name: "Pons" })).toBeVisible();
+
+  const index = page.getByRole("list", { name: "Structure index" });
+  await index.getByRole("button", { name: "Cerebellum" }).click();
+  const cerebellum = page.getByRole("complementary", { name: "Cerebellum" });
+  await expect(cerebellum).toBeVisible();
+  await expect(cerebellum.getByRole("link")).toHaveText(["Essential tremor", "Ataxia", "Vertigo"]);
+  await expect(page).toHaveURL(/\/\?structure=cerebellum#brain-explorer$/);
   expect(errors).toEqual([]);
 });

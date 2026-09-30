@@ -24,3 +24,27 @@ export function homeDistance(size: readonly [number, number, number], aspect: nu
   const tan = Math.tan(((FOV / 2) * Math.PI) / 180);
   return Math.max(halfHeight / (FILL_HEIGHT * tan), halfWidth / (FILL_WIDTH * tan * aspect));
 }
+
+/** Share of the stage's smaller dimension a framed Structure's bounding sphere may fill. */
+const FILL_FRAME = 0.75;
+
+/**
+ * Framing never comes closer than this share of the home distance. Deep
+ * Structures are small and sit inside the cortex; closer in, the specimen
+ * would overflow the stage with the Structure still hidden.
+ */
+const FRAME_NEAREST = 0.8;
+
+/**
+ * Metres from the centre of a focused Structure's bounding sphere of `radius`
+ * so it sits comfortably in the stage, between `home * FRAME_NEAREST` and the
+ * zoom-out limit. `home` is `homeDistance` for the same stage.
+ */
+export function frameDistance(radius: number, aspect: number, home: number): number {
+  const tan = Math.tan(((FOV / 2) * Math.PI) / 180);
+  const fit = radius / (FILL_FRAME * tan * Math.min(1, aspect));
+  return Math.min(Math.max(fit, home * FRAME_NEAREST), home * ZOOM_OUT);
+}
+
+/** `--dur-camera` (DESIGN.md §7): every camera move eases over it, or cuts under reduced motion. */
+export const CAMERA_MS = 900;
