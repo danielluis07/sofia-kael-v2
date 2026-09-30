@@ -152,14 +152,15 @@ export type ContactFormContent = {
 
 export const CONTACT = {
   eyebrow: SECTIONS[4].label,
-  headline: placeholder("Lorem ipsum dolor amet."),
-  lede: placeholder("Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean at nibh id erat consequat interdum."),
+  headline: "Start with a conversation.",
+  lede: "Tell Dr. Kael what brings you here and when a call would suit you. Kael Neurology will help you plan your first visit.",
   addressLabel: "Address",
-  addressLines: [placeholder("Lorem ipsum dolor sit amet"), placeholder("Lorem ipsum consectetur adipiscing")],
+  addressLines: ["24 Aldermere Lane, Suite 300", "Boston, MA 02116"],
   phoneLabel: "Phone",
-  phone: placeholder("Lorem ipsum"),
+  phone: "(617) 555-0142",
+  phoneHref: "tel:+16175550142",
   hoursLabel: "Hours",
-  hours: [{ days: placeholder("Lorem ipsum dolor"), time: placeholder("Lorem ipsum sit") }],
+  hours: [{ days: "Monday–Friday", time: "9:00 am–5:00 pm" }],
   form: {
     labels: { name: "Name", email: "Email", phone: "Phone (optional)", reason: "Reason for visit", preferredTime: "Preferred time" },
     preferredTimes: { morning: "Morning", afternoon: "Afternoon", noPreference: "No preference" },
@@ -171,13 +172,14 @@ export const CONTACT = {
       reasonRequired: "Enter a reason for your visit.",
     },
     submit: "Book a consultation",
-    success: { title: placeholder("Lorem ipsum."), body: placeholder("Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vivamus at felis a justo finibus blandit.") },
+    success: { title: "Thank you.", body: "Kael Neurology will call you within two business days." },
   },
 } as const satisfies SectionContent & {
   addressLabel: string;
   addressLines: readonly string[];
   phoneLabel: string;
   phone: string;
+  phoneHref: string;
   hoursLabel: string;
   hours: readonly { days: string; time: string }[];
   form: ContactFormContent;
