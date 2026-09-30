@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { STRUCTURE_IDS } from "./structures";
+import { CORTEX_STRUCTURES, STRUCTURE_IDS, layerOf } from "./structures";
 import {
   calloutStructure,
   deriveView,
@@ -8,6 +8,7 @@ import {
   initialExplorerState,
   type ExplorerAction,
   type ExplorerState,
+  type StructureView,
 } from "./explorer-state";
 
 const run = (...actions: ExplorerAction[]): ExplorerState => actions.reduce(explorerReducer, initialExplorerState);
@@ -352,6 +353,74 @@ describe("deriveView rule 2: Isolate", () => {
 
   test("the camera frames all of a Condition's Structures", () => {
     expect(deriveView(run({ type: "focusCondition", id: "essential-tremor" })).camera.frame).toEqual(["cerebellum", "thalamus"]);
+  });
+});
+
+describe("toggleXray", () => {
+  test("toggles, and counts as an interaction", () => {
+    const on = run({ type: "toggleXray" });
+    expect(on.xray).toBe(true);
+    expect(on.touched).toBe(true);
+    expect(explorerReducer(on, { type: "toggleXray" }).xray).toBe(false);
+  });
+
+  test("works without a Focus, never moves the camera and leaves the Focus alone", () => {
+    const focused = run({ type: "focusCondition", id: "migraine" });
+    const state = explorerReducer(focused, { type: "toggleXray" });
+    expect(state.camera).toBe(focused.camera);
+    expect(state).toEqual({ ...focused, xray: true });
+  });
+
+  test("survives clearing the Focus; Reset turns it off", () => {
+    const state = run({ type: "select", id: "pons" }, { type: "toggleXray" }, { type: "clearFocus" });
+    expect(state.xray).toBe(true);
+    expect(explorerReducer(state, { type: "reset" }).xray).toBe(false);
+  });
+});
+
+describe("deriveView rule 3: X-ray", () => {
+  const FROST: StructureView = { look: "frost", cap: false, pickable: false };
+
+  test("the eight cortical Structures are frosted, uncapped and not pickable; deep Structures stay porcelain", () => {
+    const { structures } = deriveView(run({ type: "toggleXray" }));
+    for (const id of CORTEX_STRUCTURES) expect(structures[id]).toEqual(FROST);
+    for (const id of STRUCTURE_IDS.filter((id) => layerOf(id) === "deep")) {
+      expect(structures[id]).toEqual({ look: "porcelain", cap: true, pickable: true });
+    }
+  });
+
+  test("a focused cortical Structure stays opaque oxblood", () => {
+    const { structures } = deriveView(run({ type: "toggleXray" }, { type: "select", id: "insula" }));
+    expect(structures.insula).toEqual({ look: "oxblood", cap: true, pickable: true });
+    expect(structures["frontal-lobe"]).toEqual(FROST);
+  });
+
+  test("a Condition focus keeps its cortex oxblood through the frost", () => {
+    const { structures } = deriveView(run({ type: "focusCondition", id: "migraine" }, { type: "toggleIsolate" }, { type: "toggleXray" }));
+    expect(STRUCTURE_IDS.filter((id) => structures[id].look === "oxblood")).toEqual(["occipital-lobe", "thalamus", "pons"]);
+    expect(structures["temporal-lobe"]).toEqual(FROST);
+    expect(structures.cerebellum.look).toBe("porcelain");
+  });
+
+  test("Isolate wins over X-ray: the rest of the cortex is ghost, not frost", () => {
+    const { structures } = deriveView(run({ type: "select", id: "thalamus" }, { type: "toggleIsolate" }, { type: "toggleXray" }));
+    expect(structures.thalamus.look).toBe("oxblood");
+    for (const id of STRUCTURE_IDS.filter((id) => id !== "thalamus")) expect(structures[id].look).toBe("ghost");
+  });
+
+  test("an Isolate flag without a Focus leaves X-ray in charge", () => {
+    const { structures } = deriveView({ ...initialExplorerState, isolate: true, xray: true });
+    expect(structures["parietal-lobe"]).toEqual(FROST);
+    expect(structures.hippocampus.look).toBe("porcelain");
+  });
+
+  test("the cortex stays reachable through the Structure index, but a frosted one gets no callout", () => {
+    const xray = run({ type: "toggleXray" });
+    expect(calloutStructure(explorerReducer(xray, { type: "hover", id: "frontal-lobe" }))).toBeNull();
+    expect(calloutStructure(explorerReducer(xray, { type: "hover", id: "thalamus" }))).toBe("thalamus");
+    const selected = explorerReducer(xray, { type: "select", id: "frontal-lobe" });
+    expect(selected.focus).toEqual({ kind: "structure", id: "frontal-lobe" });
+    expect(deriveView(selected).structures["frontal-lobe"].pickable).toBe(true);
   });
 });
 

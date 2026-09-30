@@ -11,12 +11,12 @@ import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { ContactShadows, OrbitControls } from "@react-three/drei";
 import { EffectComposer, N8AO, ToneMapping } from "@react-three/postprocessing";
 import { ToneMappingMode } from "postprocessing";
-import { useExplorerDispatch, useExplorerStore, useExplorerView } from "@/components/explorer/explorer-store";
+import { useExplorer, useExplorerDispatch, useExplorerStore, useExplorerView } from "@/components/explorer/explorer-store";
 import type { CalloutHandle } from "@/components/explorer/structure-callout";
 import { calloutStructure, type ExplorerView, type Look } from "@/lib/brain/explorer-state";
 import { FOV, HOME_DIRECTION, ZOOM_IN, ZOOM_OUT, frameDistance, homeDistance } from "@/lib/brain/framing";
 import { DRACO_DECODER_PATH, SPECIMEN_URL, loadingPercent } from "@/lib/brain/specimen";
-import { isStructureId, type ContextMeshExtras, type StructureId, type StructureMeshExtras } from "@/lib/brain/structures";
+import { isStructureId, layerOf, type ContextMeshExtras, type StructureId, type StructureMeshExtras } from "@/lib/brain/structures";
 
 export type Gesture = "orbit" | "zoom";
 
@@ -27,6 +27,8 @@ export type BrainStageProps = {
   idle: boolean;
   /** How long a camera move takes: `CAMERA_MS`, or 0 for a cut under reduced motion. */
   cameraMs: number;
+  /** How long X-ray's cross-fade takes: `--dur-slow`, or 0 for a cut under reduced motion. */
+  xrayMs: number;
   /** CSS pixels on the stage's right that the Structure panel covers: the view centres in what's left. */
   insetRight: number;
   /** The leader-line callout the scene places on the hovered Structure. */
@@ -45,6 +47,13 @@ const ROUGHNESS = 0.85;
 const EXPOSURE = 1.1;
 /** `--porcelain-ghost` (DESIGN.md §2): `--porcelain` at 8% opacity. */
 const GHOST_OPACITY = 0.08;
+/**
+ * X-ray's frost (#6): faint, brightest at the silhouette, so overlapping gyri
+ * don't go cloudy. Alpha is FROST_ALPHA + FROST_RIM · rim³.
+ */
+const FROST_ALPHA = 0.025;
+const FROST_RIM = 0.35;
+const FROST_ROUGHNESS = 0.35;
 /** Pointer travel, in CSS pixels, before a press counts as an orbit drag rather than a click. */
 const DRAG_PX = 4;
 
@@ -56,6 +65,8 @@ type Specimen = {
   /** Each Structure's two side meshes. */
   parts: ReadonlyMap<StructureId, readonly THREE.Mesh[]>;
   materials: Readonly<Record<Look, THREE.Material>>;
+  /** X-ray's cross-fade, 0 (porcelain) to 1 (frost): the frost material's uniform. */
+  xray: { value: number };
   dispose: () => void;
 };
 
@@ -80,6 +91,35 @@ function extrasOf(object: THREE.Object3D): StructureMeshExtras | ContextMeshExtr
   return null;
 }
 
+/**
+ * `--porcelain` that cross-fades to frosted glass as `xray` goes from 0 to 1.
+ * Depth-free, so the deep Structures show through and it never hides them.
+ */
+function frostMaterial(xray: { value: number }): THREE.MeshStandardMaterial {
+  const material = new THREE.MeshStandardMaterial({
+    color: token("--porcelain"),
+    roughness: FROST_ROUGHNESS,
+    metalness: 0,
+    transparent: true,
+    depthWrite: false,
+  });
+  material.onBeforeCompile = (shader) => {
+    shader.uniforms.uXray = xray;
+    shader.fragmentShader = shader.fragmentShader
+      .replace("void main() {", "uniform float uXray;\nvoid main() {")
+      .replace(
+        "#include <opaque_fragment>",
+          `#include <opaque_fragment>
+      float frost = smoothstep(0.0, 1.0, uXray);
+      float rim = pow(1.0 - abs(dot(normal, normalize(vViewPosition))), 3.0);
+      gl_FragColor.rgb = mix(gl_FragColor.rgb, vec3(1.0), 0.25 * frost);
+      gl_FragColor.a = mix(1.0, ${FROST_ALPHA} + ${FROST_RIM} * rim, frost);`,
+      );
+  };
+  material.customProgramCacheKey = () => "xray-frost";
+  return material;
+}
+
 async function loadSpecimen(onProgress: (percent: number) => void): Promise<Specimen> {
   const draco = new DRACOLoader().setDecoderPath(DRACO_DECODER_PATH).setDecoderConfig({ type: "wasm" });
   const loader = new GLTFLoader().setDRACOLoader(draco);
@@ -87,6 +127,7 @@ async function loadSpecimen(onProgress: (percent: number) => void): Promise<Spec
     const gltf = await loader.loadAsync(SPECIMEN_URL, (event) =>
       onProgress(loadingPercent(event.loaded, event.lengthComputable ? event.total : 0)),
     );
+    const xray = { value: 0 };
     const materials: Record<Look, THREE.MeshStandardMaterial> = {
       porcelain: new THREE.MeshStandardMaterial({ color: token("--porcelain"), roughness: ROUGHNESS, metalness: 0 }),
       oxblood: new THREE.MeshStandardMaterial({ color: token("--oxblood"), roughness: ROUGHNESS, metalness: 0 }),
@@ -99,6 +140,7 @@ async function loadSpecimen(onProgress: (percent: number) => void): Promise<Spec
         opacity: GHOST_OPACITY,
         depthWrite: false,
       }),
+      frost: frostMaterial(xray),
     };
     const geometries: THREE.BufferGeometry[] = [];
     const parts = new Map<StructureId, THREE.Mesh[]>();
@@ -123,6 +165,7 @@ async function loadSpecimen(onProgress: (percent: number) => void): Promise<Spec
       floorY: bounds.min.y,
       parts,
       materials,
+      xray,
       dispose() {
         for (const material of Object.values(materials)) material.dispose();
         for (const geometry of geometries) geometry.dispose();
@@ -137,6 +180,7 @@ export default function BrainStage({
   active,
   idle,
   cameraMs,
+  xrayMs,
   insetRight,
   callout,
   onProgress,
@@ -190,7 +234,7 @@ export default function BrainStage({
       <directionalLight position={[0.4, 0.8, 0.5]} intensity={1.1} />
       <directionalLight position={[-0.5, 0.2, -0.4]} intensity={0.3} />
       <primitive object={specimen.root} />
-      <Looks specimen={specimen} />
+      <Looks specimen={specimen} xrayMs={xrayMs} />
       {/* Baked once: the idle rotation moves the camera, not the brain. */}
       <ContactShadows
         frames={1}
@@ -219,14 +263,33 @@ export default function BrainStage({
 
 function dress(specimen: Specimen, structures: ExplorerView["structures"]) {
   for (const [id, meshes] of specimen.parts) {
-    for (const mesh of meshes) mesh.material = specimen.materials[structures[id].look];
+    const { look } = structures[id];
+    // Porcelain cortex keeps the frost until X-ray has faded back out.
+    const fadingOut = look === "porcelain" && layerOf(id) === "cortex" && specimen.xray.value > 0;
+    for (const mesh of meshes) mesh.material = specimen.materials[fadingOut ? "frost" : look];
   }
 }
 
-/** Dresses each Structure-side in the look `deriveView` gives it. */
-function Looks({ specimen }: { specimen: Specimen }) {
+/** Steps X-ray's cross-fade toward `target`; true once it has faded back out to porcelain. */
+function fadeXray(specimen: Specimen, target: 0 | 1, step: number): boolean {
+  const fade = specimen.xray;
+  fade.value = target > fade.value ? Math.min(target, fade.value + step) : Math.max(target, fade.value - step);
+  return fade.value === 0;
+}
+
+/**
+ * Dresses each Structure-side in the look `deriveView` gives it, and
+ * cross-fades X-ray's frost over `xrayMs` (a cut under reduced motion).
+ */
+function Looks({ specimen, xrayMs }: { specimen: Specimen; xrayMs: number }) {
   const { structures } = useExplorerView();
+  const xray = useExplorer((state) => state.xray);
   useLayoutEffect(() => dress(specimen, structures), [specimen, structures]);
+  useFrame((_, delta) => {
+    const target = xray ? 1 : 0;
+    if (specimen.xray.value === target) return;
+    if (fadeXray(specimen, target, xrayMs === 0 ? 1 : (delta * 1000) / xrayMs)) dress(specimen, structures);
+  });
   return null;
 }
 

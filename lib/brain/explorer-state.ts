@@ -1,7 +1,7 @@
 // The Brain Explorer's whole state model (ADR 0003): one pure reducer the tool
 // rail, the panel, the Structure index and the scene all read through the store.
 import { conditionById, type ConditionId } from "@/content/conditions";
-import { STRUCTURE_IDS, type StructureId } from "@/lib/brain/structures";
+import { STRUCTURE_IDS, layerOf, type StructureId } from "@/lib/brain/structures";
 
 export type Focus =
   | { kind: "none" }
@@ -58,6 +58,8 @@ export type ExplorerAction =
   | { type: "clearFocus" }
   /** The rail's or the Structure panel's Isolate. Does nothing without a Focus. */
   | { type: "toggleIsolate" }
+  /** The rail's X-ray. */
+  | { type: "toggleXray" }
   /** The rail's Reset: everything back to the initial state, except `touched`. */
   | { type: "reset" }
   /** Back or Forward landed on a history entry: its Focus and Isolate come back. */
@@ -99,6 +101,9 @@ export function explorerReducer(state: ExplorerState, action: ExplorerAction): E
         : { ...state, focus: { kind: "none" }, isolate: false };
     case "toggleIsolate":
       return state.focus.kind === "none" ? state : { ...state, isolate: !state.isolate, touched: true };
+    case "toggleXray":
+      // Never moves the camera, and needs no Focus.
+      return { ...state, xray: !state.xray, touched: true };
     case "reset":
       // The hover belongs to the pointer, not to a tool.
       return { ...initialExplorerState, hovered: state.hovered, camera: move(state, "home"), touched: true };
@@ -155,8 +160,8 @@ export function focusedStructures(focus: Focus): readonly StructureId[] {
   }
 }
 
-/** The look of a Structure-side, named after its DESIGN.md §2 token. */
-export type Look = "oxblood" | "porcelain" | "ghost";
+/** The look of a Structure-side, named after its DESIGN.md §2 token; `frost` is X-ray's translucent porcelain. */
+export type Look = "oxblood" | "porcelain" | "ghost" | "frost";
 
 export type StructureView = {
   look: Look;
@@ -175,14 +180,15 @@ export type ExplorerView = {
 
 const FOCUSED: StructureView = { look: "oxblood", cap: true, pickable: true };
 const GHOST: StructureView = { look: "ghost", cap: false, pickable: false };
+const FROST: StructureView = { look: "frost", cap: false, pickable: false };
 const PORCELAIN: StructureView = { look: "porcelain", cap: true, pickable: true };
 
 /**
  * What the scene renders (ADR 0003 "deriveView"). The first matching rule wins:
  * 1. in the Focus: oxblood, capped, pickable;
  * 2. Isolate is on: ghost, uncapped, not pickable;
+ * 3. X-ray is on and it's cortex: frost, uncapped, not pickable, so clicks reach the deep Structures;
  * 4. otherwise: porcelain, capped, pickable.
- * Rule 3 (X-ray) arrives with its tool.
  */
 export function deriveView(state: ExplorerState): ExplorerView {
   const focused = focusedStructures(state.focus);
@@ -196,10 +202,11 @@ function structureView(state: ExplorerState, focused: readonly StructureId[], id
   if (focused.includes(id)) return FOCUSED;
   // Isolate only takes effect while there is a Focus.
   if (state.isolate && focused.length > 0) return GHOST;
+  if (state.xray && layerOf(id) === "cortex") return FROST;
   return PORCELAIN;
 }
 
-/** The Structure the hover callout names: the hovered one, unless it isn't pickable (a ghost never gets one). */
+/** The Structure the hover callout names: the hovered one, unless it isn't pickable (a ghost or frosted cortex never gets one). */
 export function calloutStructure(state: ExplorerState): StructureId | null {
   const { hovered } = state;
   return hovered && structureView(state, focusedStructures(state.focus), hovered).pickable ? hovered : null;

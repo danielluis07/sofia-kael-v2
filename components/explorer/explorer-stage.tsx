@@ -24,6 +24,9 @@ type Phase = "idle" | "loading" | "ready" | "fallback";
 const PANEL_W = 380;
 const PANEL_DOCKED = "(min-width: 64rem)";
 
+/** `--dur-slow` (DESIGN.md §7): X-ray's cross-fade to frost. */
+const XRAY_MS = 700;
+
 /** How far ahead of the viewport the scene starts loading. */
 const LOAD_AHEAD = "100% 0px";
 
@@ -47,6 +50,7 @@ export function ExplorerStage() {
   const panelDocked = useMediaQuery(PANEL_DOCKED, true);
   const idle = !touched && !reducedMotion;
   const cameraMs = reducedMotion ? 0 : CAMERA_MS;
+  const xrayMs = reducedMotion ? 0 : XRAY_MS;
 
   useEffect(() => {
     const stage = stageRef.current;
@@ -97,6 +101,7 @@ export function ExplorerStage() {
       data-specimen={phase}
       data-idle={idle ? "rotating" : "still"}
       data-camera-ms={cameraMs}
+      data-xray-ms={xrayMs}
       style={{ "--panel-w": `${PANEL_W}px` } as CSSProperties}
       className="absolute inset-0">
       <div
@@ -121,6 +126,7 @@ export function ExplorerStage() {
                 active={onScreen}
                 idle={idle}
                 cameraMs={cameraMs}
+                xrayMs={xrayMs}
                 insetRight={panelOpen && panelDocked ? PANEL_W : 0}
                 callout={callout}
                 onProgress={setPercent}
