@@ -53,7 +53,7 @@ export function SectionTitle({
       <Reveal as="p" className="label text-ink-soft">
         {eyebrow}
       </Reveal>
-      <Reveal as="h2" index={1} id={id} className="font-serif text-display-l text-ink">
+      <Reveal as="h2" index={1} id={id} tabIndex={-1} className="font-serif text-display-l text-ink">
         {headline}
       </Reveal>
     </div>

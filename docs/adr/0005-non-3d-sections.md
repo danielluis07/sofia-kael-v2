@@ -18,7 +18,7 @@ Amended on 2026-09-30 for #33 at the user's request: Contact uses shadcn's `Fiel
 - **`remotePatterns` for Unsplash.** The page would depend on images.unsplash.com at runtime (plus its redirects and the optimizer allowlist). Swapping in the AI portraits would also mean editing config as well as content.
 - **react-hook-form + zod.** Two dependencies for five fields whose data goes nowhere.
 - **Only the browser's native validation bubbles.** They can't be styled to DESIGN.md §10 (oxblood text and an icon below the field).
-- **shadcn `Sheet`.** Its side-panel look has little in common with the full-screen navigation sheet. The Base UI primitive underneath is used directly instead. The original decision also excluded shadcn form controls; #33 now uses them with bottom-border styling at the user's request.
+- **Unmodified shadcn `Sheet`.** Its default side-panel layout does not fit full-screen navigation. Amended on 2026-09-30 for #34 at the user's request: use the local shadcn `Sheet` over Base UI `Dialog`, with a `full` side for the full-screen paper popup, no shadows, and a text close control. The original decision also excluded shadcn form controls; #33 now uses them with bottom-border styling at the user's request.
 
 ## Page composition
 
@@ -53,9 +53,10 @@ Amended on 2026-09-30 for #33 at the user's request: Contact uses shadcn's `Fiel
 
 - **`SiteNav`** is a Server Component: the wordmark, the `SECTIONS` links and the "Book a consultation" pill (a `#contact` link styled with `buttonVariants`). It is `sticky top-0` on `--paper`, and its height is published as `--nav-h`.
 - **The hairline** is pure CSS. The border is `--rule` by default, and under `@supports (animation-timeline: scroll())` a scroll-driven animation fades it in over the first 16px of scroll. Where scroll-driven animations aren't supported, the hairline is simply always on. The global reduced-motion override (`animation-duration: 0.01ms !important`) must not apply to it: the hairline is a state, not motion.
-- **The mobile sheet** is the only client part of the nav: `MobileNavSheet`, a Base UI `Dialog` shown below `md`. A text "Menu" button opens a full-screen `--paper` popup with the `SECTIONS` links in the serif at `display-m` and the consultation pill. Base UI provides the focus trap, scroll lock, Esc and focus return.
+- **The mobile sheet** is the only client part of the nav: `MobileNavSheet`, a shadcn `Sheet` backed by Base UI `Dialog`, shown below `md`. A text "Menu" button opens a full-screen `--paper` popup with the `SECTIONS` links in the serif at `display-m` and the consultation pill. Base UI provides the focus trap, scroll lock, Esc and focus return.
 - **A link in the sheet** closes the dialog first. Once the close completes (`onOpenChangeComplete`), the code sets the hash, so the scroll lock is released before the jump, and moves keyboard focus to the target section's headline.
 - **Without JS**, the Menu button does nothing. Mobile Visitors navigate with the footer's anchor links (DESIGN.md §8), which are always present.
+- **Loading:** the shadcn Menu button is server-rendered. Its client wrapper loads the Sheet runtime on the first opening with `next/dynamic`; the closed dialog stays mounted afterward so Base UI can finish transitions and return keyboard focus. This keeps initial-route JavaScript within ADR 0006's 170 KB budget.
 
 ## Portraits
 

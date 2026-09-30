@@ -1,11 +1,12 @@
 import { buttonVariants } from "@/components/ui/button";
+import { MobileNavSheet } from "@/components/mobile-nav-sheet";
 import { NAV, SECTIONS, sectionHref } from "@/content/site";
 import { cn } from "@/lib/utils";
 
 /**
  * Sticky top bar (DESIGN.md §8, ADR 0005 "Navigation"). Its height is `--nav-h`,
  * and `.site-nav` in globals.css fades the hairline in on scroll. Below `md` the
- * links are hidden; the footer links cover mobile until the sheet lands.
+ * links move into the full-screen mobile sheet.
  */
 export function SiteNav() {
   return (
@@ -27,9 +28,10 @@ export function SiteNav() {
             ))}
           </ul>
         </nav>
-        <a href={sectionHref("contact")} className={cn(buttonVariants({ size: "sm" }), "md:max-lg:hidden")}>
+        <a href={sectionHref("contact")} className={cn(buttonVariants({ size: "sm" }), "hidden lg:inline-flex")}>
           {NAV.consultation}
         </a>
+        <MobileNavSheet />
       </div>
     </header>
   );
