@@ -103,14 +103,14 @@ export function ExplorerStage() {
       data-camera-ms={cameraMs}
       data-xray-ms={xrayMs}
       style={{ "--panel-w": `${PANEL_W}px` } as CSSProperties}
-      className="absolute inset-0">
+      className="absolute inset-0 [container-type:size]">
       <div
         aria-hidden
         className={cn(
-          "pointer-events-none absolute inset-0 grid place-items-center transition-opacity duration-(--dur-slow)",
+          "pointer-events-none absolute inset-0 grid place-items-center transition-opacity duration-(--dur-base) motion-reduce:transition-none",
           ready && "opacity-0",
         )}>
-        <SpecimenOutline data-testid="specimen-outline" className="w-[min(80%,34rem)]" />
+        <SpecimenOutline data-testid="specimen-outline" />
       </div>
 
       <div role="img" aria-label={EXPLORER.canvasDescription} className="absolute inset-0">
@@ -119,12 +119,12 @@ export function ExplorerStage() {
             <div
               className={cn(
                 // Until the mobile slice's "Tap to explore", vertical swipes keep scrolling the page.
-                "absolute inset-0 opacity-0 transition-opacity duration-(--dur-slow) [&_canvas]:touch-pan-y!",
+                "absolute inset-0 opacity-0 transition-opacity duration-(--dur-base) motion-reduce:transition-none [&_canvas]:touch-pan-y!",
                 ready && "opacity-100",
               )}>
               <BrainStage
                 active={onScreen}
-                idle={idle}
+                idle={ready && idle}
                 cameraMs={cameraMs}
                 xrayMs={xrayMs}
                 insetRight={panelOpen && panelDocked ? PANEL_W : 0}

@@ -1,6 +1,6 @@
 # Brain model credits
 
-`brain.glb` is a modified version of the segmented Z-Anatomy brain model. It is licensed under **[Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)](https://creativecommons.org/licenses/by-sa/4.0/)**. This license covers only the 3D model. The website's code is licensed separately.
+`brain.glb` is a modified version of the segmented Z-Anatomy brain model. It is licensed under **[Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)](https://creativecommons.org/licenses/by-sa/4.0/)**. This license covers the 3D model and its derived SVG art. The website's code is licensed separately.
 
 This site is fictional. Dr. Sofia Kael and Kael Neurology do not exist, and nothing here is medical advice. The model is approximate and educational, and it is not for clinical use.
 
@@ -30,3 +30,5 @@ The upstream white-matter tracts (HCP1065) are not included.
 - recentred the model and recompressed it with Draco.
 
 The full mapping is recorded in [ADR 0002](https://github.com/danielluis07/sofia-kael-v2/blob/main/docs/adr/0002-curate-the-brain-model-at-build-time.md).
+
+`bun run build:brain-art` (`scripts/build-brain-art.ts`) derives `public/art/specimen-outline.svg` (home-camera silhouette and visible anatomical boundaries) and `public/art/coronal-section.svg` (Structure contours at coronal z = 0 mm) from the curated `brain.glb`. Both SVG derivatives retain the model's **CC BY-SA 4.0** license and the attribution above.

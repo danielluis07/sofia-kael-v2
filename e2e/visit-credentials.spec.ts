@@ -11,6 +11,11 @@ test.describe("First visit and Credentials without JavaScript", () => {
     await expect(page.locator("main ol")).toHaveCount(1);
     await expect(visit.getByRole("listitem")).toHaveCount(4);
     await expect(visit.getByRole("heading", { level: 3 })).toHaveText(FIRST_VISIT.steps.map((step) => step.title));
+    const art = visit.locator('img[src="/art/coronal-section.svg"]');
+    await art.scrollIntoViewIfNeeded();
+    await expect(art).toBeVisible();
+    await expect(art.locator("..")).toHaveAttribute("aria-hidden", "true");
+    await expect(art).toHaveAttribute("alt", "");
     for (const step of FIRST_VISIT.steps) await expect(visit.getByText(step.body, { exact: true })).toBeVisible();
 
     const credentials = page.getByRole("region", { name: CREDENTIALS.headline });
@@ -35,6 +40,10 @@ for (const viewport of [{ width: 1440, height: 1000 }, { width: 375, height: 812
       const visit = page.getByRole("region", { name: FIRST_VISIT.headline });
       const credentials = page.getByRole("region", { name: CREDENTIALS.headline });
       await visit.scrollIntoViewIfNeeded();
+      const art = visit.locator('img[src="/art/coronal-section.svg"]');
+      await art.scrollIntoViewIfNeeded();
+      await expect(art).toBeVisible();
+      await expect.poll(() => art.evaluate((image: HTMLImageElement) => image.naturalWidth)).toBeGreaterThan(0);
       await expectNoAxeViolations(page);
       await credentials.scrollIntoViewIfNeeded();
       await expectNoAxeViolations(page);
