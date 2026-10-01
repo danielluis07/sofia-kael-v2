@@ -186,8 +186,8 @@ export function focusedStructures(focus: Focus): readonly StructureId[] {
   }
 }
 
-/** The look of a Structure-side, named after its DESIGN.md §2 token; `frost` is X-ray's translucent porcelain. */
-export type Look = "oxblood" | "porcelain" | "ghost" | "frost";
+/** A Structure-side's material treatment; `frost` is X-ray's translucent tissue. */
+export type Look = "oxblood" | "tissue" | "ghost" | "frost";
 
 export type StructureView = {
   look: Look;
@@ -211,14 +211,14 @@ export type ExplorerView = {
 const FOCUSED: StructureView = { look: "oxblood", cap: true, pickable: true };
 const GHOST: StructureView = { look: "ghost", cap: false, pickable: false };
 const FROST: StructureView = { look: "frost", cap: false, pickable: false };
-const PORCELAIN: StructureView = { look: "porcelain", cap: true, pickable: true };
+const TISSUE: StructureView = { look: "tissue", cap: true, pickable: true };
 
 /**
  * What the scene renders (ADR 0003 "deriveView"). The first matching rule wins:
  * 1. in the Focus: oxblood, capped, pickable;
  * 2. Isolate is on: ghost, uncapped, not pickable;
  * 3. X-ray is on and it's cortex: frost, uncapped, not pickable, so clicks reach the deep Structures;
- * 4. otherwise: porcelain, capped, pickable.
+ * 4. otherwise: tissue, capped, pickable.
  */
 export function deriveView(state: ExplorerState): ExplorerView {
   const focused = focusedStructures(state.focus);
@@ -241,7 +241,7 @@ function structureView(state: ExplorerState, focused: readonly StructureId[], id
   // Isolate only takes effect while there is a Focus.
   if (state.isolate && focused.length > 0) return GHOST;
   if (state.xray && layerOf(id) === "cortex") return FROST;
-  return PORCELAIN;
+  return TISSUE;
 }
 
 /** The Structure the hover callout names: the hovered one, unless it isn't pickable (a ghost or frosted cortex never gets one). */

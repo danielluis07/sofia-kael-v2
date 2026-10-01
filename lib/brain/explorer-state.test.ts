@@ -151,17 +151,17 @@ describe("focusedStructures", () => {
 });
 
 describe("deriveView", () => {
-  test("rule 4: with no Focus every Structure is porcelain, capped and pickable", () => {
+  test("rule 4: with no Focus every Structure is tissue, capped and pickable", () => {
     const { structures } = deriveView(initialExplorerState);
     expect(Object.keys(structures)).toEqual([...STRUCTURE_IDS]);
-    for (const id of STRUCTURE_IDS) expect(structures[id]).toEqual({ look: "porcelain", cap: true, pickable: true });
+    for (const id of STRUCTURE_IDS) expect(structures[id]).toEqual({ look: "tissue", cap: true, pickable: true });
   });
 
-  test("rule 1: the selected Structure is oxblood, capped and pickable; the rest stay porcelain", () => {
+  test("rule 1: the selected Structure is oxblood, capped and pickable; the rest stay tissue", () => {
     const { structures } = deriveView(run({ type: "select", id: "thalamus" }));
     expect(structures.thalamus).toEqual({ look: "oxblood", cap: true, pickable: true });
     for (const id of STRUCTURE_IDS.filter((id) => id !== "thalamus")) {
-      expect(structures[id]).toEqual({ look: "porcelain", cap: true, pickable: true });
+      expect(structures[id]).toEqual({ look: "tissue", cap: true, pickable: true });
     }
   });
 
@@ -348,7 +348,7 @@ describe("deriveView rule 2: Isolate", () => {
 
   test("an Isolate flag without a Focus ghosts nothing", () => {
     const { structures } = deriveView({ ...initialExplorerState, isolate: true });
-    for (const id of STRUCTURE_IDS) expect(structures[id].look).toBe("porcelain");
+    for (const id of STRUCTURE_IDS) expect(structures[id].look).toBe("tissue");
   });
 
   test("the camera frames all of a Condition's Structures", () => {
@@ -381,11 +381,11 @@ describe("toggleXray", () => {
 describe("deriveView rule 3: X-ray", () => {
   const FROST: StructureView = { look: "frost", cap: false, pickable: false };
 
-  test("the eight cortical Structures are frosted, uncapped and not pickable; deep Structures stay porcelain", () => {
+  test("the eight cortical Structures are frosted, uncapped and not pickable; deep Structures stay tissue", () => {
     const { structures } = deriveView(run({ type: "toggleXray" }));
     for (const id of CORTEX_STRUCTURES) expect(structures[id]).toEqual(FROST);
     for (const id of STRUCTURE_IDS.filter((id) => layerOf(id) === "deep")) {
-      expect(structures[id]).toEqual({ look: "porcelain", cap: true, pickable: true });
+      expect(structures[id]).toEqual({ look: "tissue", cap: true, pickable: true });
     }
   });
 
@@ -399,7 +399,7 @@ describe("deriveView rule 3: X-ray", () => {
     const { structures } = deriveView(run({ type: "focusCondition", id: "migraine" }, { type: "toggleIsolate" }, { type: "toggleXray" }));
     expect(STRUCTURE_IDS.filter((id) => structures[id].look === "oxblood")).toEqual(["occipital-lobe", "thalamus", "pons"]);
     expect(structures["temporal-lobe"]).toEqual(FROST);
-    expect(structures.cerebellum.look).toBe("porcelain");
+    expect(structures.cerebellum.look).toBe("tissue");
   });
 
   test("Isolate wins over X-ray: the rest of the cortex is ghost, not frost", () => {
@@ -411,7 +411,7 @@ describe("deriveView rule 3: X-ray", () => {
   test("an Isolate flag without a Focus leaves X-ray in charge", () => {
     const { structures } = deriveView({ ...initialExplorerState, isolate: true, xray: true });
     expect(structures["parietal-lobe"]).toEqual(FROST);
-    expect(structures.hippocampus.look).toBe("porcelain");
+    expect(structures.hippocampus.look).toBe("tissue");
   });
 
   test("the cortex stays reachable through the Structure index, but a frosted one gets no callout", () => {
@@ -570,7 +570,7 @@ describe("deriveView: Slice", () => {
     expect(capped(sliced())).toEqual([...STRUCTURE_IDS]);
   });
 
-  test("the Focus is capped (in oxblood) along with the porcelain", () => {
+  test("the Focus is capped (in oxblood) along with the tissue", () => {
     const view = sliced({ type: "select", id: "thalamus" });
     expect(view.structures.thalamus).toEqual({ look: "oxblood", cap: true, pickable: true });
     expect(capped(view)).toEqual([...STRUCTURE_IDS]);

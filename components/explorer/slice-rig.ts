@@ -10,7 +10,7 @@ import { SIDES, type PartId, type Side } from "@/lib/brain/structures";
 /** Caps, stencil passes, contours and the frame render on this layer, which the contact shadow's camera ignores (#6). */
 export const SLICE_LAYER = 1;
 
-/** A cut face's fill: `--porcelain-cut`, the lighter white matter inside the cortical ribbon, or the Focus in `--oxblood-deep`. */
+/** A cut face's fill: `--tissue-cut`, the lighter white matter inside the cortical ribbon, or the Focus in `--oxblood-deep`. */
 export type CapTone = "cut" | "white" | "focus";
 
 export type SliceColors = Readonly<Record<CapTone | "frame" | "contour", THREE.Color>>;

@@ -55,10 +55,10 @@ export type BrainStageProps = {
 };
 
 // Settings approved on the #6 prototype. Units are metres.
-const ROUGHNESS = 0.85;
+const ROUGHNESS = 0.72;
 /** A touch brighter than the prototype, whose base colour read slightly grey. */
 const EXPOSURE = 1.1;
-/** `--porcelain-ghost` (DESIGN.md §2): `--porcelain` at 8% opacity. */
+/** Natural tissue at 8% opacity during Isolate (DESIGN.md §2). */
 const GHOST_OPACITY = 0.08;
 /**
  * X-ray's frost (#6): faint, brightest at the silhouette, so overlapping gyri
@@ -71,6 +71,34 @@ const FROST_ROUGHNESS = 0.35;
 const DRAG_PX = 4;
 
 type Size = readonly [number, number, number];
+type TissueTone = "pink" | "rose" | "pale" | "deep";
+type MaterialLooks = Readonly<Record<Look, THREE.Material>>;
+
+/** Illustrative tissue variation, shared by both sides; colors do not encode Conditions. */
+const STRUCTURE_TONES: Partial<Record<StructureId, TissueTone>> = {
+  "parietal-lobe": "pale",
+  "temporal-lobe": "rose",
+  "occipital-lobe": "deep",
+  insula: "rose",
+  "precentral-gyrus": "rose",
+  "postcentral-gyrus": "pale",
+  "cingulate-gyrus": "deep",
+  "corpus-callosum": "pale",
+  hypothalamus: "rose",
+  hippocampus: "rose",
+  amygdala: "deep",
+  "basal-ganglia": "deep",
+  "substantia-nigra": "deep",
+  ventricles: "pale",
+  pons: "pale",
+  "medulla-oblongata": "pale",
+  cerebellum: "rose",
+};
+
+function tissueTone(id: StructureId): TissueTone {
+  return STRUCTURE_TONES[id] ?? "pink";
+}
+
 type Specimen = {
   root: THREE.Group;
   size: Size;
@@ -84,9 +112,9 @@ type Specimen = {
   /** Split's slide, 0 (whole) to 1 (apart), before easing. */
   split: { value: number };
   /** One set per hemisphere: each clips by its own half's copy of the Slice plane. */
-  materials: Readonly<Record<Side, Readonly<Record<Look, THREE.Material>>>>;
+  materials: Readonly<Record<Side, Readonly<Record<TissueTone, MaterialLooks>>>>;
   slice: SliceRig;
-  /** X-ray's cross-fade, 0 (porcelain) to 1 (frost): the frost material's uniform. */
+  /** X-ray's cross-fade, 0 (tissue) to 1 (frost): the frost material's uniform. */
   xray: { value: number };
   dispose: () => void;
 };
@@ -113,13 +141,13 @@ function extrasOf(object: THREE.Object3D): StructureMeshExtras | ContextMeshExtr
 }
 
 /**
- * `--porcelain` that cross-fades to frosted glass as `xray` goes from 0 to 1.
+ * A Structure's tissue tone cross-fades to frosted glass as `xray` goes from 0 to 1.
  * Depth-free, so the deep Structures show through and it never hides them.
  */
-function frostMaterial(xray: { value: number }): THREE.MeshStandardMaterial {
+function frostMaterial(xray: { value: number }, color: THREE.Color): THREE.MeshStandardMaterial {
   const material = new THREE.MeshStandardMaterial({
-    color: token("--porcelain"),
-    roughness: FROST_ROUGHNESS,
+    color,
+    roughness: ROUGHNESS,
     metalness: 0,
     transparent: true,
     depthWrite: false,
@@ -128,6 +156,7 @@ function frostMaterial(xray: { value: number }): THREE.MeshStandardMaterial {
     shader.uniforms.uXray = xray;
     shader.fragmentShader = shader.fragmentShader
       .replace("void main() {", "uniform float uXray;\nvoid main() {")
+      .replace("#include <roughnessmap_fragment>", `#include <roughnessmap_fragment>\nroughnessFactor = mix(roughnessFactor, ${FROST_ROUGHNESS}, smoothstep(0.0, 1.0, uXray));`)
       .replace(
         "#include <opaque_fragment>",
           `#include <opaque_fragment>
@@ -141,11 +170,10 @@ function frostMaterial(xray: { value: number }): THREE.MeshStandardMaterial {
   return material;
 }
 
-/** The Slice caps' fills (#6): a ribbon of `--porcelain-cut` round lighter white matter, the Focus in `--oxblood-deep`. */
+/** The Slice caps' fills (#6): a ribbon of `--tissue-cut` round lighter white matter, the Focus in `--oxblood-deep`. */
 function sliceColors() {
-  const cut = token("--porcelain-cut");
-  // Most of the way from the cut tone to `--porcelain`, mixed as the eye sees it.
-  const white = cut.clone().convertLinearToSRGB().lerp(token("--porcelain").convertLinearToSRGB(), 0.6).convertSRGBToLinear();
+  const cut = token("--tissue-cut");
+  const white = token("--white-matter");
   return { cut, white, focus: token("--oxblood-deep"), frame: token("--oxblood"), contour: token("--ink-soft") };
 }
 
@@ -157,21 +185,27 @@ async function loadSpecimen(onProgress: (percent: number) => void, contours: boo
       onProgress(loadingPercent(event.loaded, event.lengthComputable ? event.total : 0)),
     );
     const xray = { value: 0 };
-    const looks = (): Record<Look, THREE.MeshStandardMaterial> => ({
-      porcelain: new THREE.MeshStandardMaterial({ color: token("--porcelain"), roughness: ROUGHNESS, metalness: 0 }),
+    const looks = (tone: TissueTone): Record<Look, THREE.MeshStandardMaterial> => ({
+      tissue: new THREE.MeshStandardMaterial({ color: token(`--tissue-${tone}`), roughness: ROUGHNESS, metalness: 0 }),
       oxblood: new THREE.MeshStandardMaterial({ color: token("--oxblood"), roughness: ROUGHNESS, metalness: 0 }),
       // Depth-free, so the ghosts never hide the Focus or each other.
       ghost: new THREE.MeshStandardMaterial({
-        color: token("--porcelain"),
+        color: token(`--tissue-${tone}`),
         roughness: ROUGHNESS,
         metalness: 0,
         transparent: true,
         opacity: GHOST_OPACITY,
         depthWrite: false,
       }),
-      frost: frostMaterial(xray),
+      frost: frostMaterial(xray, token(`--tissue-${tone}`)),
     });
-    const materials = { left: looks(), right: looks() };
+    const palette = (): Record<TissueTone, MaterialLooks> => ({
+      pink: looks("pink"),
+      rose: looks("rose"),
+      pale: looks("pale"),
+      deep: looks("deep"),
+    });
+    const materials = { left: palette(), right: palette() };
     const geometries: THREE.BufferGeometry[] = [];
     const parts = new Map<StructureId, THREE.Mesh[]>();
     const whiteMatter: THREE.Mesh[] = [];
@@ -185,7 +219,7 @@ async function loadSpecimen(onProgress: (percent: number) => void, contours: boo
         object.visible = false;
         return;
       }
-      object.material = materials[extras.side].porcelain;
+      object.material = materials[extras.side]["context" in extras ? "pale" : tissueTone(extras.structure)].tissue;
       object.userData.side = extras.side;
       if ("context" in extras) {
         // White matter is context for Slice only (ADR 0002).
@@ -206,7 +240,9 @@ async function loadSpecimen(onProgress: (percent: number) => void, contours: boo
     for (const { mesh, side } of sided) halves[side].attach(mesh);
     const slice = buildSliceRig(sided, halves, sliceColors(), contours);
     for (const side of SIDES) {
-      for (const material of Object.values(materials[side])) material.clippingPlanes = [slice.planes[side]];
+      for (const looks of Object.values(materials[side])) {
+        for (const material of Object.values(looks)) material.clippingPlanes = [slice.planes[side]];
+      }
     }
     return {
       root: gltf.scene,
@@ -220,7 +256,11 @@ async function loadSpecimen(onProgress: (percent: number) => void, contours: boo
       slice,
       xray,
       dispose() {
-        for (const side of SIDES) for (const material of Object.values(materials[side])) material.dispose();
+        for (const side of SIDES) {
+          for (const looks of Object.values(materials[side])) {
+            for (const material of Object.values(looks)) material.dispose();
+          }
+        }
         slice.dispose();
         for (const geometry of geometries) geometry.dispose();
       },
@@ -328,13 +368,13 @@ export default function BrainStage({
 function dress(specimen: Specimen, structures: ExplorerView["structures"]) {
   for (const [id, meshes] of specimen.parts) {
     const { look } = structures[id];
-    // Porcelain cortex keeps the frost until X-ray has faded back out.
-    const fadingOut = look === "porcelain" && layerOf(id) === "cortex" && specimen.xray.value > 0;
-    for (const mesh of meshes) mesh.material = specimen.materials[mesh.userData.side as Side][fadingOut ? "frost" : look];
+    // Tissue cortex keeps the frost until X-ray has faded back out.
+    const fadingOut = look === "tissue" && layerOf(id) === "cortex" && specimen.xray.value > 0;
+    for (const mesh of meshes) mesh.material = specimen.materials[mesh.userData.side as Side][tissueTone(id)][fadingOut ? "frost" : look];
   }
 }
 
-/** A Structure's cut face: none, the Focus in `--oxblood-deep`, or `--porcelain-cut`; the white matter's is lighter. */
+/** A Structure's cut face: none, the Focus in `--oxblood-deep`, or `--tissue-cut`; the white matter's is lighter. */
 function capTone(view: ExplorerView, part: PartId): CapTone | null {
   if (part === WHITE_MATTER) return view.whiteMatter ? "white" : null;
   const { cap, look } = view.structures[part];
@@ -374,7 +414,8 @@ function Precompile({ specimen }: { specimen: Specimen }) {
     if (!sample) return;
     const standIns = new THREE.Group();
     for (const side of SIDES) {
-      for (const material of Object.values(specimen.materials[side])) standIns.add(new THREE.Mesh(sample.geometry, material));
+      // All tones share shader programs; compiling one tone covers the palette.
+      for (const material of Object.values(specimen.materials[side].pink)) standIns.add(new THREE.Mesh(sample.geometry, material));
     }
     scene.add(standIns);
     const target = new THREE.WebGLRenderTarget(1, 1);
@@ -389,7 +430,7 @@ function Precompile({ specimen }: { specimen: Specimen }) {
   return null;
 }
 
-/** Steps X-ray's cross-fade toward `target`; true once it has faded back out to porcelain. */
+/** Steps X-ray's cross-fade toward `target`; true once it has faded back out to tissue. */
 function fadeXray(specimen: Specimen, target: 0 | 1, step: number): boolean {
   const fade = specimen.xray;
   fade.value = target > fade.value ? Math.min(target, fade.value + step) : Math.max(target, fade.value - step);

@@ -34,13 +34,18 @@ Light theme only. There is no dark mode; strip the scaffold's `.dark` tokens.
 
 | Token               | Hex                     | Use                                              |
 | ------------------- | ----------------------- | ------------------------------------------------ |
-| `--porcelain`       | `#EFEBE4`               | Base brain material                              |
-| `--porcelain-cut`   | `#B9AFA3`               | Faces exposed by Slice, the "inside of the cast" |
-| `--porcelain-ghost` | `#EFEBE4` at 8% opacity | Non-isolated Structures during Isolate           |
+| `--tissue-pink` | `#DCA5A0` | Base warm pink brain material |
+| `--tissue-rose` | `#CE9595` | Muted rose variation |
+| `--tissue-pale` | `#E4B5AD` | Lighter pink variation |
+| `--tissue-deep` | `#C98F94` | Deeper rose variation |
+| `--tissue-cut` | `#B77F83` | Muted rose faces exposed by Slice |
+| `--white-matter` | `#EFE5D8` | Pale ivory white matter exposed by Slice |
+
+Isolate renders non-focused Structures in their tissue color at 8% opacity. These colors are illustrative, with both sides of a Structure sharing a tone; they do not encode Conditions or exact biological tissue differences.
 
 **Rules**
 
-- Oxblood is the only chromatic color on the page. Use it sparingly: one italic word per headline at most, and one primary button per viewport.
+- Oxblood is the only chromatic UI accent. Natural tissue colors are confined to the Brain Explorer specimen. Use oxblood sparingly: one italic word per headline at most, and one primary button per viewport.
 - Text contrast is at least 4.5:1. `--ink-soft` on `--paper` passes; never put `--ink-soft` on `--paper-2` for text under 14px.
 - Semantic colors (form errors) use `--oxblood` plus an icon and text. There is no extra red or green.
 
@@ -205,9 +210,9 @@ The wordmark, the anchor links, and two required lines in `body-s` `--ink-soft`:
 ### Model and material
 
 - The model is the Z-Anatomy GLB (see `docs/adr/0001-z-anatomy-brain-model.md`), with vessels, meninges and cranial nerves hidden.
-- **Porcelain specimen:** a matte `--porcelain` material with soft roughness and gentle ambient occlusion, like a museum plaster cast. There are no realistic tissue textures.
-- Structures take color only when selected or linked; they turn `--oxblood`.
-- Faces cut by Slice show `--porcelain-cut`.
+- **Natural tissue specimen:** warm pink and muted rose materials with subtle variation between Structures, a softly matte finish, gentle highlights and ambient occlusion that reveal the folds. There are no tissue textures or wet, glossy surfaces.
+- Selected or linked Structures turn `--oxblood`, overriding their tissue color.
+- Faces exposed by Slice show `--tissue-cut`, with `--white-matter` inside the cortical ribbon.
 - Loads lazily as the section approaches. The placeholder is a line drawing of the brain with a mono readout: "Loading specimen · 62%".
 
 ### Structures (initial list, around 20)
@@ -225,8 +230,8 @@ The tool rail sits at the bottom center: a hairline-bordered `--surface` bar wit
 | **Rotate**              | Always on: drag to orbit, scroll or pinch to zoom (clamped). Not a button.                                                                                                                |
 | **Slice** _(signature)_ | A cutting plane with a segmented control (Sagittal / Coronal / Axial) and a slider. The plane is drawn as a hairline `--oxblood` frame. A mono readout shows e.g. "Coronal · y = −22 mm". |
 | **Split**               | The hemispheres slide apart along the midline, and the camera swings to show the medial surface and corpus callosum.                                                                      |
-| **X-ray**               | The cortex cross-fades to frosted translucent porcelain, and deep Structures stay opaque.                                                                                                 |
-| **Isolate**             | Available when a Structure is selected: every other Structure fades to `--porcelain-ghost`.                                                                                               |
+| **X-ray**               | The cortex cross-fades to softly pink frosted translucency, and deep Structures stay opaque. |
+| **Isolate**             | Available when a Structure is selected: every other Structure fades to its tissue color at 8% opacity. |
 | **Reset**               | Returns the camera and all tools to the initial state.                                                                                                                                    |
 
 Tools can combine, e.g. X-ray + Isolate, or Slice while Split.

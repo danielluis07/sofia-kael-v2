@@ -20,8 +20,12 @@
   --color-oxblood: var(--oxblood);
   --color-oxblood-deep: var(--oxblood-deep);
   --color-oxblood-tint: var(--oxblood-tint);
-  --color-porcelain: var(--porcelain);
-  --color-porcelain-cut: var(--porcelain-cut);
+  --color-tissue-pink: var(--tissue-pink);
+  --color-tissue-rose: var(--tissue-rose);
+  --color-tissue-pale: var(--tissue-pale);
+  --color-tissue-deep: var(--tissue-deep);
+  --color-tissue-cut: var(--tissue-cut);
+  --color-white-matter: var(--white-matter);
 
   /* shadcn semantic tokens */
   --color-background: var(--background);
@@ -136,8 +140,12 @@
   --oxblood-tint: #f0e2e0;
 
   /* Brain Explorer materials */
-  --porcelain: #efebe4;
-  --porcelain-cut: #b9afa3;
+  --tissue-pink: #dca5a0;
+  --tissue-rose: #ce9595;
+  --tissue-pale: #e4b5ad;
+  --tissue-deep: #c98f94;
+  --tissue-cut: #b77f83;
+  --white-matter: #efe5d8;
 
   /* shadcn semantic tokens mapped onto the palette */
   --background: var(--paper);
@@ -161,7 +169,7 @@
   --chart-1: var(--oxblood);
   --chart-2: var(--ink);
   --chart-3: var(--ink-soft);
-  --chart-4: var(--porcelain-cut);
+  --chart-4: #b9afa3;
   --chart-5: var(--rule);
   --sidebar: var(--paper);
   --sidebar-foreground: var(--ink);
