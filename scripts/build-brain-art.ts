@@ -174,7 +174,7 @@ async function main() {
   // SVG viewport units compensate for viewBox scaling: an 8px ring and an
   // 11px caption stay readable at both page widths, just like the 1px strokes.
   const calloutStyle = "<style>text{font-size:calc(11000px * 1px / 100vw);letter-spacing:calc(1200px * 1px / 100vw)}circle{r:calc(4000px * 1px / 100vw)}</style>";
-  const callout = `${calloutStyle}${svgPath(`M${x.toFixed(1)} ${y.toFixed(1)}L790 250L970 250`)}<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="4" fill="var(--paper, #FCFBFA)" stroke="var(--oxblood, #6E1F24)" stroke-width="1.5" vector-effect="non-scaling-stroke"/><text x="790" y="232" fill="var(--ink-soft, #5D5752)" stroke="none" font-family="Geist Mono, monospace" font-size="32" letter-spacing="2.5">THALAMUS</text>`;
+  const callout = `${calloutStyle}${svgPath(`M${x.toFixed(1)} ${y.toFixed(1)}L790 250L970 250`)}<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="4" fill="var(--paper, #FCFBFA)" stroke="var(--oxblood, #6E1F24)" stroke-width="1.5" vector-effect="non-scaling-stroke"/><text x="790" y="232" fill="var(--ink-soft, #5D5752)" stroke="none" font-family="Geist Mono, monospace" font-size="32" letter-spacing="2.5">TÁLAMO</text>`;
   await mkdir("public/art", { recursive: true });
   for (const [i, body] of [outline, sections.join("") + callout].entries()) {
     const output = svg(body);

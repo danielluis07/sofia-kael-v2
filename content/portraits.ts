@@ -7,12 +7,12 @@ export type PortraitContent = { src: StaticImageData; alt: string };
 export const PORTRAITS = {
   hero: {
     src: hero,
-    alt: "Dr. Sofia Kael with copper hair, wearing a taupe blazer and standing with her hands loosely clasped.",
+    alt: "Dra. Sofia Kael, de cabelos acobreados, em pé, usando um blazer bege-acinzentado e com as mãos levemente unidas.",
   },
   about: {
     src: about,
-    alt: "Dr. Sofia Kael seated in a neutral upholstered chair, wearing a taupe blazer with her hands resting in her lap.",
+    alt: "Dra. Sofia Kael sentada em uma poltrona de tom neutro, usando um blazer bege-acinzentado e com as mãos apoiadas no colo.",
   },
 } as const satisfies Record<"hero" | "about", PortraitContent | null>;
 
-export const PORTRAIT_CAPTION = "Portrait of Dr. Kael · forthcoming";
+export const PORTRAIT_CAPTION = "Retrato da Dra. Kael · em breve";

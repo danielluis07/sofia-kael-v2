@@ -2,17 +2,17 @@ import { expect, test, type Page } from "@playwright/test";
 import { expectNoAxeViolations } from "./axe";
 
 const SECTIONS = [
-  { id: "about", label: "About" },
-  { id: "conditions", label: "Conditions" },
-  { id: "brain-explorer", label: "Brain Explorer" },
-  { id: "first-visit", label: "First visit" },
-  { id: "contact", label: "Contact" },
+  { id: "about", label: "Sobre" },
+  { id: "conditions", label: "Condições" },
+  { id: "brain-explorer", label: "Explore o cérebro" },
+  { id: "first-visit", label: "Primeira consulta" },
+  { id: "contact", label: "Contato" },
 ];
 
-// DESIGN.md §8, verbatim.
+// Required footer lines from DESIGN.md §8, localized into Brazilian Portuguese.
 const FOOTER_LINES = [
-  "Brain model: Z-Anatomy – The libre 3D atlas of anatomy, and BodyParts3D (DBCLS), licensed CC BY-SA 4.0.",
-  "Dr. Sofia Kael and Kael Neurology are fictional. This site is a design project and does not provide medical advice.",
+  "Modelo do cérebro: Z-Anatomy – The libre 3D atlas of anatomy e BodyParts3D (DBCLS), sob licença CC BY-SA 4.0.",
+  "A Dra. Sofia Kael e a Kael Neurologia são fictícias. O endereço e o telefone também são fictícios. Este site é um projeto de design e não oferece orientação médica.",
 ];
 
 /** Every `[data-reveal]` element's resting opacity and transform. */
@@ -41,7 +41,7 @@ test("renders the sections in order, each labelled by its headline", async ({ pa
 
 test("every nav link lands with the section headline below the nav", async ({ page }) => {
   await page.goto("/");
-  const nav = page.getByRole("navigation", { name: "Main navigation" });
+  const nav = page.getByRole("navigation", { name: "Navegação principal" });
   const header = page.getByRole("banner");
 
   for (const { id, label } of SECTIONS) {
@@ -60,7 +60,7 @@ test("every nav link lands with the section headline below the nav", async ({ pa
 
 test("the consultation pill links to Contact", async ({ page }) => {
   await page.goto("/");
-  await expect(page.getByRole("banner").getByRole("link", { name: "Book a consultation" })).toHaveAttribute(
+  await expect(page.getByRole("banner").getByRole("link", { name: "Agende uma consulta" })).toHaveAttribute(
     "href",
     "#contact",
   );
@@ -119,9 +119,9 @@ test("the footer carries the required lines, the links and the model credits", a
   await page.goto("/");
   const footer = page.getByRole("contentinfo");
   for (const line of FOOTER_LINES) await expect(footer.getByText(line, { exact: true })).toBeVisible();
-  const links = footer.getByRole("navigation", { name: "Footer navigation" }).getByRole("link");
+  const links = footer.getByRole("navigation", { name: "Navegação do rodapé" }).getByRole("link");
   await expect(links).toHaveText(SECTIONS.map((section) => section.label));
-  await expect(footer.getByRole("link", { name: "Model credits" })).toHaveAttribute("href", "/models/CREDITS.md");
+  await expect(footer.getByRole("link", { name: "Créditos do modelo" })).toHaveAttribute("href", "/models/CREDITS.md");
 });
 
 test.describe("on mobile", () => {
@@ -129,8 +129,8 @@ test.describe("on mobile", () => {
 
   test("hides the nav links and keeps the footer links", async ({ page }) => {
     await page.goto("/");
-    await expect(page.getByRole("navigation", { name: "Main navigation" })).toBeHidden();
-    await expect(page.getByRole("navigation", { name: "Footer navigation" }).getByRole("link")).toHaveCount(5);
+    await expect(page.getByRole("navigation", { name: "Navegação principal" })).toBeHidden();
+    await expect(page.getByRole("navigation", { name: "Navegação do rodapé" }).getByRole("link")).toHaveCount(5);
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(375);
   });
 });

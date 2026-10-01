@@ -41,7 +41,7 @@ test.describe("Contact form", () => {
     await submit.click();
     await expect(phone).toBeFocused();
     await expect(phone).toHaveAccessibleDescription(CONTACT.form.errors.phoneInvalid);
-    await phone.fill("(617) 555-0142");
+    await phone.fill("(11) 0000-0142");
     await expect(contact.getByText(CONTACT.form.errors.phoneInvalid)).toHaveCount(0);
     await submit.click();
     await expect(reason).toBeFocused();

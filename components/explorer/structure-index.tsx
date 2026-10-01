@@ -2,7 +2,10 @@
 
 import { ChevronDown } from "lucide-react";
 import { useId, useState, type KeyboardEvent } from "react";
-import { useExplorer, useExplorerDispatch } from "@/components/explorer/explorer-store";
+import {
+  useExplorer,
+  useExplorerDispatch,
+} from "@/components/explorer/explorer-store";
 import { useMediaQuery } from "@/components/explorer/use-media-query";
 import { EXPLORER } from "@/content/site";
 import { STRUCTURES } from "@/content/structures";
@@ -17,7 +20,9 @@ import { ScrollArea } from "@/components/ui/scroll-area";
  * row feeds the callout, like canvas hover.
  */
 export function StructureIndex({ className }: { className?: string }) {
-  const selected = useExplorer((state) => (state.focus.kind === "structure" ? state.focus.id : null));
+  const selected = useExplorer((state) =>
+    state.focus.kind === "structure" ? state.focus.id : null,
+  );
   const dispatch = useExplorerDispatch();
   const listId = useId();
   // Open on wide stages; a phone collapses it until the mobile slice's bottom sheet takes over.
@@ -28,7 +33,11 @@ export function StructureIndex({ className }: { className?: string }) {
   const tabStop = selected ?? active ?? STRUCTURE_IDS[0];
 
   const onKeyDown = (event: KeyboardEvent<HTMLUListElement>) => {
-    const rows = [...event.currentTarget.querySelectorAll<HTMLButtonElement>("[data-structure]")];
+    const rows = [
+      ...event.currentTarget.querySelectorAll<HTMLButtonElement>(
+        "[data-structure]",
+      ),
+    ];
     const current = rows.indexOf(document.activeElement as HTMLButtonElement);
     const next = {
       ArrowDown: Math.min(current + 1, rows.length - 1),
@@ -42,7 +51,12 @@ export function StructureIndex({ className }: { className?: string }) {
   };
 
   return (
-    <div className={cn("flex w-56 flex-col border border-rule bg-surface", className, !open && "h-fit!")}>
+    <div
+      className={cn(
+        "flex w-56 flex-col border border-rule bg-surface",
+        className,
+        !open && "h-fit!",
+      )}>
       <button
         type="button"
         data-structure-index-toggle=""
@@ -51,10 +65,23 @@ export function StructureIndex({ className }: { className?: string }) {
         onClick={() => setToggled(!open)}
         className="label flex items-center justify-between gap-2 px-3 py-2.5 text-ink focus-visible:outline-offset-[-2px]">
         {EXPLORER.structureIndex}
-        <ChevronDown aria-hidden className={cn("size-4 transition-transform duration-(--dur-fast)", open && "rotate-180")} strokeWidth={1.5} />
+        <ChevronDown
+          aria-hidden
+          className={cn(
+            "size-4 transition-transform duration-(--dur-fast)",
+            open && "rotate-180",
+          )}
+          strokeWidth={1.5}
+        />
       </button>
-      <ScrollArea hidden={!open} className="min-h-0 flex-1 border-t border-rule">
-        <ul id={listId} aria-label={EXPLORER.structureIndex} onKeyDown={onKeyDown} className="py-1">
+      <ScrollArea
+        hidden={!open}
+        className="min-h-0 flex-1 border-t border-rule">
+        <ul
+          id={listId}
+          aria-label={EXPLORER.structureIndex}
+          onKeyDown={onKeyDown}
+          className="py-1">
           {STRUCTURE_IDS.map((id) => (
             <li key={id}>
               <button
@@ -70,7 +97,8 @@ export function StructureIndex({ className }: { className?: string }) {
                 onBlur={() => dispatch({ type: "unhover", id })}
                 className={cn(
                   "w-full px-3 py-1.5 text-left font-mono text-xs text-ink hover:bg-paper-2 focus-visible:outline-offset-[-2px]",
-                  id === selected && "bg-oxblood-tint text-oxblood hover:bg-oxblood-tint",
+                  id === selected &&
+                    "bg-oxblood-tint text-oxblood hover:bg-oxblood-tint",
                 )}>
                 {STRUCTURES[id].name}
               </button>
@@ -87,7 +115,10 @@ export function StructureIndex({ className }: { className?: string }) {
  * (the row the index would Tab to, for a Condition), or the toggle if the list is collapsed.
  */
 export function focusStructureIndex(root: ParentNode, id: StructureId | null) {
-  const row = root.querySelector<HTMLElement>(id ? `[data-structure="${id}"]` : `[data-structure][tabindex="0"]`);
+  const row = root.querySelector<HTMLElement>(
+    id ? `[data-structure="${id}"]` : `[data-structure][tabindex="0"]`,
+  );
   if (row?.checkVisibility()) row.focus();
-  else root.querySelector<HTMLElement>("[data-structure-index-toggle]")?.focus();
+  else
+    root.querySelector<HTMLElement>("[data-structure-index-toggle]")?.focus();
 }

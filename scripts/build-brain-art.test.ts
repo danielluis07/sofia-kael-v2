@@ -39,7 +39,7 @@ test("the cross-section has exactly one Thalamus callout and Structure contours"
   const source = await Bun.file(ART_FILES[1]).text();
   expect(source.match(/<circle /g)).toHaveLength(1);
   expect(source.match(/<text /g)).toHaveLength(1);
-  expect(source).toContain(">THALAMUS</text>");
+  expect(source).toContain(">TÁLAMO</text>");
   expect(source).toContain('data-structure="thalamus.l"');
   expect(source).toContain('data-structure="ventricles.l"');
 });

@@ -3,8 +3,8 @@ import { expectNoAxeViolations } from "./axe";
 
 const GLB = "**/models/brain.glb";
 const DESCRIPTION =
-  "An interactive three-dimensional brain. Select a Structure using the Structure index to read its description and related Conditions.";
-const FALLBACK = "Explore the brain using the Structure index. Each Structure has a description and a list of related Conditions.";
+  "Um cérebro interativo em três dimensões. Selecione uma estrutura no índice para ler sua descrição e conhecer as condições relacionadas.";
+const FALLBACK = "Explore o cérebro pelo índice de estruturas. Cada estrutura tem uma descrição e uma lista de condições relacionadas.";
 
 const stage = (page: Page) => page.locator("[data-specimen]");
 
@@ -39,15 +39,15 @@ test.describe("the specimen", () => {
 
     await page.locator("#brain-explorer").scrollIntoViewIfNeeded();
     const readout = page.getByTestId("specimen-readout");
-    await expect(readout).toHaveText(/^Loading specimen · \d+%$/);
+    await expect(readout).toHaveText(/^Carregando modelo · \d+%$/);
     await expect(page.getByTestId("specimen-outline").locator("..")).toHaveCSS("transition-duration", "0.4s");
     await expect(stage(page)).toHaveAttribute("data-specimen", "ready", { timeout: 60_000 });
-    await expect(readout).toHaveText("Loading specimen · 100%");
+    await expect(readout).toHaveText("Carregando modelo · 100%");
     await expect(readout).toHaveCSS("opacity", "0");
     await expect(page.getByTestId("specimen-outline").locator("..")).toHaveCSS("opacity", "0");
     await expect(page.getByRole("img", { name: DESCRIPTION }).locator(":scope > div")).toHaveCSS("transition-duration", "0.4s");
 
-    const hint = page.getByText("Drag to rotate · Click a Structure");
+    const hint = page.getByText("Arraste para girar · Clique em uma estrutura");
     await expect(hint).toHaveAttribute("aria-hidden", "false");
     await expect(stage(page)).toHaveAttribute("data-idle", "rotating");
 
@@ -132,7 +132,7 @@ test.describe("with reduced motion, when the GLB fails", () => {
 // and the URL are exercised exactly as they are before it loads.
 test.describe("selecting a Structure", () => {
   const panel = (page: Page, name: string) => page.getByRole("complementary", { name });
-  const index = (page: Page) => page.getByRole("list", { name: "Structure index" });
+  const index = (page: Page) => page.getByRole("list", { name: "Índice de estruturas" });
 
   test.beforeEach(async ({ page }) => {
     await page.route(GLB, () => {});
@@ -141,24 +141,24 @@ test.describe("selecting a Structure", () => {
   test("?structure= opens its panel on load, before the specimen", async ({ page }) => {
     const errors = collectPageErrors(page);
     await page.goto("/?structure=hippocampus#brain-explorer");
-    const hippocampus = panel(page, "Hippocampus");
+    const hippocampus = panel(page, "Hipocampo");
     await expect(hippocampus).toBeVisible();
     await expect(stage(page)).not.toHaveAttribute("data-specimen", "ready");
     await expect(hippocampus.locator("[lang=la]")).toHaveText("Hippocampus");
-    await expect(hippocampus.getByText(/^The hippocampus helps turn experiences/)).toBeVisible();
-    await expect(hippocampus.getByText("Conditions Dr. Kael treats here")).toBeVisible();
-    await expect(hippocampus.getByRole("link")).toHaveText(["Epilepsy (temporal lobe)", "Alzheimer's disease"]);
+    await expect(hippocampus.getByText(/^O hipocampo ajuda a transformar experiências/)).toBeVisible();
+    await expect(hippocampus.getByText("Condições tratadas pela Dra. Kael nesta estrutura")).toBeVisible();
+    await expect(hippocampus.getByRole("link")).toHaveText(["Epilepsia do lobo temporal", "Doença de Alzheimer"]);
     await expect(hippocampus.getByRole("link").first()).toHaveAttribute("href", "#condition-temporal-lobe-epilepsy");
-    await expect(index(page).getByRole("button", { name: "Hippocampus" })).toHaveAttribute("aria-current", "true");
-    await expect(page.locator("[aria-live=polite]")).toContainText("Hippocampus");
+    await expect(index(page).getByRole("button", { name: "Hipocampo" })).toHaveAttribute("aria-current", "true");
+    await expect(page.locator("[aria-live=polite]")).toContainText("Hipocampo");
     expect(errors).toEqual([]);
   });
 
   test("a Structure without Conditions has no Conditions block", async ({ page }) => {
     await page.goto("/?structure=insula#brain-explorer");
-    const insula = panel(page, "Insula");
+    const insula = panel(page, "Ínsula");
     await expect(insula).toBeVisible();
-    await expect(insula.getByText("Conditions Dr. Kael treats here")).toHaveCount(0);
+    await expect(insula.getByText("Condições tratadas pela Dra. Kael nesta estrutura")).toHaveCount(0);
   });
 
   test("an unknown id is dropped from the URL, silently", async ({ page }) => {
@@ -172,16 +172,16 @@ test.describe("selecting a Structure", () => {
   test("the keyboard selects through the Structure index, and Esc clears", async ({ page }) => {
     await page.goto("/#brain-explorer");
     const entries = await page.evaluate(() => history.length);
-    await page.getByRole("button", { name: "Structure index" }).focus();
+    await page.getByRole("button", { name: "Índice de estruturas" }).focus();
     await page.keyboard.press("Tab");
-    await expect(index(page).getByRole("button", { name: "Frontal lobe" })).toBeFocused();
+    await expect(index(page).getByRole("button", { name: "Lobo frontal" })).toBeFocused();
     await page.keyboard.press("ArrowDown");
     await page.keyboard.press("ArrowDown");
-    const temporal = index(page).getByRole("button", { name: "Temporal lobe" });
+    const temporal = index(page).getByRole("button", { name: "Lobo temporal" });
     await expect(temporal).toBeFocused();
     await page.keyboard.press("Enter");
 
-    await expect(panel(page, "Temporal lobe")).toBeVisible();
+    await expect(panel(page, "Lobo temporal")).toBeVisible();
     await expect(page).toHaveURL(/\/\?structure=temporal-lobe#brain-explorer$/);
     await expect(temporal).toHaveAttribute("aria-current", "true");
     // Selections replace the URL, never push.
@@ -196,25 +196,25 @@ test.describe("selecting a Structure", () => {
 
   test("Home and End reach both ends of the index; one Tab stop leaves it", async ({ page }) => {
     await page.goto("/#brain-explorer");
-    await index(page).getByRole("button", { name: "Frontal lobe" }).focus();
+    await index(page).getByRole("button", { name: "Lobo frontal" }).focus();
     await page.keyboard.press("End");
-    await expect(index(page).getByRole("button", { name: "Cerebellum" })).toBeFocused();
+    await expect(index(page).getByRole("button", { name: "Cerebelo" })).toBeFocused();
     await page.keyboard.press("Home");
-    await expect(index(page).getByRole("button", { name: "Frontal lobe" })).toBeFocused();
+    await expect(index(page).getByRole("button", { name: "Lobo frontal" })).toBeFocused();
     await expect(index(page).locator("button[tabindex='0']")).toHaveCount(1);
   });
 
   test("the close control clears the Focus and hands keyboard focus back to the index", async ({ page }) => {
     await page.goto("/?structure=pons#brain-explorer");
-    await panel(page, "Pons").getByRole("button", { name: "Close panel" }).click();
+    await panel(page, "Ponte").getByRole("button", { name: "Fechar painel" }).click();
     await expect(page.getByRole("complementary")).toHaveCount(0);
     await expect(page).toHaveURL(/\/#brain-explorer$/);
-    await expect(index(page).getByRole("button", { name: "Pons" })).toBeFocused();
+    await expect(index(page).getByRole("button", { name: "Ponte" })).toBeFocused();
   });
 
   test("the index collapses", async ({ page }) => {
     await page.goto("/#brain-explorer");
-    const toggle = page.getByRole("button", { name: "Structure index" });
+    const toggle = page.getByRole("button", { name: "Índice de estruturas" });
     await expect(toggle).toHaveAttribute("aria-expanded", "true");
     await toggle.click();
     await expect(toggle).toHaveAttribute("aria-expanded", "false");
@@ -231,7 +231,7 @@ test.describe("selecting a Structure", () => {
 
     test("is axe-clean with a Structure focused", async ({ page }) => {
       await page.goto("/?structure=hippocampus#brain-explorer");
-      await expect(panel(page, "Hippocampus")).toBeVisible();
+      await expect(panel(page, "Hipocampo")).toBeVisible();
       await expectNoAxeViolations(page);
     });
   });

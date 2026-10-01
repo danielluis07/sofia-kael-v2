@@ -3,11 +3,11 @@ import type { SliceAxis } from "@/lib/brain/slice";
 export type SectionLink = { id: string; label: string };
 
 export const SECTIONS = [
-  { id: "about", label: "About" },
-  { id: "conditions", label: "Conditions" },
-  { id: "brain-explorer", label: "Brain Explorer" },
-  { id: "first-visit", label: "First visit" },
-  { id: "contact", label: "Contact" },
+  { id: "about", label: "Sobre" },
+  { id: "conditions", label: "Condições" },
+  { id: "brain-explorer", label: "ENtenda o cérebro" },
+  { id: "first-visit", label: "Primeira consulta" },
+  { id: "contact", label: "Contato" },
 ] as const satisfies readonly SectionLink[];
 
 export type SectionId = (typeof SECTIONS)[number]["id"];
@@ -15,14 +15,18 @@ export type SectionId = (typeof SECTIONS)[number]["id"];
 export function sectionHref(id: SectionId) {
   return `#${id}` as const;
 }
-export type SectionContent = { eyebrow: string; headline: string; lede: string };
+export type SectionContent = {
+  eyebrow: string;
+  headline: string;
+  lede: string;
+};
 
 export const NAV = {
-  wordmark: "Kael Neurology",
-  consultation: "Book a consultation",
+  wordmark: "Kael Neurologia",
+  consultation: "Agende uma consulta",
   menu: "Menu",
-  closeMenu: "Close menu",
-  navigationLabel: "Main navigation",
+  closeMenu: "Fechar menu",
+  navigationLabel: "Navegação principal",
 } as const satisfies Record<string, string>;
 
 export type HeroContent = {
@@ -34,28 +38,32 @@ export type HeroContent = {
 };
 
 export const HERO = {
-  headline: "General neurological care.",
-  lede: "Dr. Sofia Kael takes time to listen, explain what symptoms may mean, and discuss the next steps with you.",
+  headline: "Cuidado em neurologia clínica.",
+  lede: "A Dra. Sofia Kael dedica tempo para ouvir, explicar o que os sintomas podem indicar e conversar com você sobre os próximos passos.",
   consultation: NAV.consultation,
-  explore: "Explore the brain",
-  portraitCallout: "Dr. Sofia Kael, MD · Neurologist",
+  explore: "Entenda o cérebro humano",
+  portraitCallout: "Dra. Sofia Kael · Neurologista",
 } as const satisfies HeroContent;
 
 export const ABOUT = {
   eyebrow: SECTIONS[0].label,
-  headline: "Neurological care with time for questions.",
-  lede: "Dr. Kael helps people make sense of symptoms affecting the brain and nervous system, from a first concern to ongoing care.",
-  biography: "Dr. Sofia Kael is a general clinical neurologist at Kael Neurology in Boston. Her consultations begin with a conversation about symptoms and how they affect everyday life. She reviews your medical history and examines how your nervous system is working. Dr. Kael explains when further tests may help and discusses care options in plain language.",
-  pullQuote: "A careful conversation helps make sense of symptoms.",
+  headline: "Cuidado neurológico com tempo para suas dúvidas.",
+  lede: "A Dra. Kael ajuda você a compreender os sintomas que afetam o cérebro e o sistema nervoso, desde as primeiras dúvidas até o acompanhamento contínuo.",
+  biography:
+    "A Dra. Sofia Kael é neurologista clínica na Kael Neurologia, em São Paulo. Suas consultas começam com uma conversa sobre os sintomas e como eles afetam o dia a dia. Ela avalia seu histórico de saúde e examina o funcionamento do sistema nervoso. A Dra. Kael explica quando exames complementares podem ajudar e apresenta as opções de cuidado em uma linguagem clara.",
+  pullQuote: "Uma conversa atenta ajuda a compreender os sintomas.",
 } as const satisfies SectionContent & { biography: string; pullQuote: string };
 
 export const CONDITIONS_SECTION = {
   eyebrow: SECTIONS[1].label,
-  headline: "Conditions Dr. Kael treats.",
-  lede: "Dr. Kael provides care for the Conditions below. Read about their symptoms and select 'See it in the brain' to explore the Structures involved.",
-  seeInBrain: "See it in the brain",
-  structuresLabel: "Structures",
-} as const satisfies SectionContent & { seeInBrain: string; structuresLabel: string };
+  headline: "Condições tratadas pela Dra. Kael.",
+  lede: "A Dra. Kael acompanha as condições abaixo. Conheça os sintomas e selecione “Veja no cérebro” para explorar as estruturas envolvidas.",
+  seeInBrain: "Veja no cérebro",
+  structuresLabel: "Estruturas",
+} as const satisfies SectionContent & {
+  seeInBrain: string;
+  structuresLabel: string;
+};
 
 export type ExplorerContent = SectionContent & {
   hint: string;
@@ -71,7 +79,14 @@ export type ExplorerContent = SectionContent & {
   clear: string;
   backTo: string;
   toolsLabel: string;
-  tools: { rotate: string; slice: string; split: string; xray: string; isolate: string; reset: string };
+  tools: {
+    rotate: string;
+    slice: string;
+    split: string;
+    xray: string;
+    isolate: string;
+    reset: string;
+  };
   slice: {
     /** The segmented control's group label. */
     orientation: string;
@@ -84,30 +99,39 @@ export type ExplorerContent = SectionContent & {
 
 export const EXPLORER = {
   eyebrow: SECTIONS[2].label,
-  headline: "Explore the brain",
-  lede: "Select a Structure to learn what it does and which Conditions Dr. Kael treats. Rotate the brain or use the tools to see inside.",
-  hint: "Drag to rotate · Click a Structure",
-  canvasDescription: "An interactive three-dimensional brain. Select a Structure using the Structure index to read its description and related Conditions.",
-  loading: "Loading specimen",
-  fallback: "Explore the brain using the Structure index. Each Structure has a description and a list of related Conditions.",
-  tapToExplore: "Tap to explore",
-  exit: "Exit",
-  structureIndex: "Structure index",
-  closePanel: "Close panel",
-  conditionsLabel: "Conditions Dr. Kael treats here",
-  structuresLabel: "Structures",
-  clear: "Clear",
-  backTo: "Back to",
-  toolsLabel: "Tools",
-  tools: { rotate: "Rotate", slice: "Slice", split: "Split", xray: "X-ray", isolate: "Isolate", reset: "Reset" },
+  headline: "Entenda o cérebro",
+  lede: "Selecione uma estrutura para conhecer sua função e as condições tratadas pela Dra. Kael. Gire o cérebro ou use as ferramentas para explorar seu interior.",
+  hint: "Arraste para girar · Clique em uma estrutura",
+  canvasDescription:
+    "Um cérebro interativo em três dimensões. Selecione uma estrutura no índice para ler sua descrição e conhecer as condições relacionadas.",
+  loading: "Carregando modelo",
+  fallback:
+    "Entenda o cérebro pelo índice de estruturas. Cada estrutura tem uma descrição e uma lista de condições relacionadas.",
+  tapToExplore: "Toque para explorar",
+  exit: "Sair",
+  structureIndex: "Índice de estruturas",
+  closePanel: "Fechar painel",
+  conditionsLabel: "Condições tratadas pela Dra. Kael nesta estrutura",
+  structuresLabel: "Estruturas",
+  clear: "Limpar",
+  backTo: "Voltar para",
+  toolsLabel: "Ferramentas",
+  tools: {
+    rotate: "Girar",
+    slice: "Corte",
+    split: "Separar",
+    xray: "Raio X",
+    isolate: "Isolar",
+    reset: "Redefinir",
+  },
   slice: {
-    orientation: "Slice orientation",
+    orientation: "Orientação do corte",
     axes: {
-      sagittal: { name: "Sagittal", plane: "left and right" },
-      coronal: { name: "Coronal", plane: "front and back" },
-      axial: { name: "Axial", plane: "upper and lower" },
+      sagittal: { name: "Sagital", plane: "esquerda e direita" },
+      coronal: { name: "Coronal", plane: "frente e trás" },
+      axial: { name: "Axial", plane: "superior e inferior" },
     },
-    position: "Slice position",
+    position: "Posição do corte",
   },
 } as const satisfies ExplorerContent;
 
@@ -115,13 +139,25 @@ export type VisitStep = { title: string; body: string };
 
 export const FIRST_VISIT = {
   eyebrow: SECTIONS[3].label,
-  headline: "What to expect at your first visit.",
-  lede: "You’ll have time to explain your concerns, ask questions, and discuss the next steps in your care.",
+  headline: "O que esperar da sua primeira consulta.",
+  lede: "Você terá tempo para falar sobre suas preocupações, tirar dúvidas e conversar sobre os próximos passos do seu cuidado.",
   steps: [
-    { title: "Before you arrive", body: "Bring a list of your medications and any previous test results. You can note when your symptoms began, what seems to affect them, and the questions you want to ask." },
-    { title: "Your consultation", body: "You’ll discuss your symptoms and how they affect everyday life. Dr. Kael will review your medical history and examine functions such as your movement, balance, and sensation, explaining each part as you go." },
-    { title: "Tests, if you need them", body: "If further information would help, you’ll discuss which tests may be useful and why. You’ll have a chance to ask about what a test involves before deciding on the next step." },
-    { title: "A plan to take with you", body: "You’ll review the findings with Dr. Kael and discuss your care options. Together, you’ll agree on the next steps, including how you’ll receive any test results and when to follow up." },
+    {
+      title: "Antes de chegar",
+      body: "Traga uma lista dos medicamentos que você usa e os resultados de exames anteriores. Anote quando os sintomas começaram, o que parece influenciá-los e as perguntas que deseja fazer.",
+    },
+    {
+      title: "Durante a consulta",
+      body: "Você vai conversar sobre seus sintomas e como eles afetam o dia a dia. A Dra. Kael avaliará seu histórico de saúde e examinará funções como movimento, equilíbrio e sensibilidade, explicando cada etapa.",
+    },
+    {
+      title: "Exames, se forem necessários",
+      body: "Se forem necessárias mais informações, você e a Dra. Kael conversarão sobre quais exames podem ajudar e por quê. Você poderá tirar dúvidas sobre cada exame antes de decidir o próximo passo.",
+    },
+    {
+      title: "Um plano para seguir",
+      body: "Você vai revisar os achados com a Dra. Kael e conversar sobre as opções de cuidado. Juntos, vocês definirão os próximos passos, incluindo como receber os resultados dos exames e quando retornar.",
+    },
   ],
 } as const satisfies SectionContent & { steps: readonly VisitStep[] };
 
@@ -129,20 +165,37 @@ export type TrainingEntry = { years: string; text: string };
 export type Publication = { title: string; venue: string; year: string };
 
 export const CREDENTIALS = {
-  eyebrow: "Credentials & research",
-  headline: "Training and research in clinical neurology.",
-  lede: "Dr. Kael’s training and research focus on careful assessment and clear communication in everyday neurological care.",
-  trainingLabel: "Training & affiliations",
-  trainingCallout: "Clinical practice & research",
-  publicationsLabel: "Selected publications",
+  eyebrow: "Formação e pesquisa",
+  headline: "Formação e pesquisa em neurologia clínica.",
+  lede: "A formação e a pesquisa da Dra. Kael se concentram na avaliação cuidadosa e na comunicação clara no atendimento neurológico.",
+  trainingLabel: "Formação e vínculos institucionais",
+  trainingCallout: "Prática clínica e pesquisa",
+  publicationsLabel: "Publicações selecionadas",
   training: [
-    { years: "2006–2010", text: "Doctor of Medicine, Talvenwick School of Medicine." },
-    { years: "2010–2014", text: "Neurology residency, Orseldane Teaching Hospital." },
-    { years: "2014–present", text: "General clinical neurology, Kael Neurology. Research affiliate, Veylford Institute for Neurological Studies." },
+    {
+      years: "2006–2010",
+      text: "Graduação em Medicina, Faculdade de Medicina Talvenwick.",
+    },
+    {
+      years: "2010–2014",
+      text: "Residência em Neurologia, Hospital de Ensino Orseldane.",
+    },
+    {
+      years: "2014–atual",
+      text: "Neurologia clínica, Kael Neurologia. Pesquisadora associada ao Instituto Veylford de Estudos Neurológicos.",
+    },
   ],
   publications: [
-    { title: "Discussing uncertainty in the first neurological consultation", venue: "Talvenwick Journal of Clinical Neurology", year: "2023" },
-    { title: "Symptom diaries in the assessment of recurring headache", venue: "Veylford Review of Neurological Practice", year: "2021" },
+    {
+      title: "Como abordar a incerteza na primeira consulta neurológica",
+      venue: "Revista Talvenwick de Neurologia Clínica",
+      year: "2023",
+    },
+    {
+      title: "Diários de sintomas na avaliação de cefaleias recorrentes",
+      venue: "Revista Veylford de Prática Neurológica",
+      year: "2021",
+    },
   ],
 } as const satisfies SectionContent & {
   trainingLabel: string;
@@ -153,36 +206,64 @@ export const CREDENTIALS = {
 };
 
 export type ContactFormContent = {
-  labels: { name: string; email: string; phone: string; reason: string; preferredTime: string };
+  labels: {
+    name: string;
+    email: string;
+    phone: string;
+    reason: string;
+    preferredTime: string;
+  };
   preferredTimes: { morning: string; afternoon: string; noPreference: string };
-  errors: { nameRequired: string; emailRequired: string; emailInvalid: string; phoneInvalid: string; reasonRequired: string };
+  errors: {
+    nameRequired: string;
+    emailRequired: string;
+    emailInvalid: string;
+    phoneInvalid: string;
+    reasonRequired: string;
+  };
   submit: string;
   success: { title: string; body: string };
 };
 
 export const CONTACT = {
   eyebrow: SECTIONS[4].label,
-  headline: "Start with a conversation.",
-  lede: "Tell Dr. Kael about your concerns and when a call would suit you. Kael Neurology will help you arrange your first visit.",
-  addressLabel: "Address",
-  addressLines: ["24 Aldermere Lane, Suite 300", "Boston, MA 02116"],
-  phoneLabel: "Phone",
-  phone: "(617) 555-0142",
-  phoneHref: "tel:+16175550142",
-  hoursLabel: "Hours",
-  hours: [{ days: "Monday–Friday", time: "9:00 am–5:00 pm" }],
+  headline: "Comece com uma conversa.",
+  lede: "Conte à Dra. Kael o que preocupa você e qual o melhor horário para receber uma ligação. A Kael Neurologia ajudará a agendar sua primeira consulta.",
+  addressLabel: "Endereço",
+  addressLines: [
+    "Rua das Acácias do Vale, 240, sala 302",
+    "Jardim Aurora · São Paulo, SP",
+  ],
+  phoneLabel: "Telefone",
+  phone: "(11) 0000-0142",
+  phoneHref: "tel:+551100000142",
+  hoursLabel: "Horário de atendimento",
+  hours: [{ days: "Segunda a sexta", time: "9h às 17h" }],
   form: {
-    labels: { name: "Name", email: "Email", phone: "Phone (optional)", reason: "Reason for visit", preferredTime: "Preferred time" },
-    preferredTimes: { morning: "Morning", afternoon: "Afternoon", noPreference: "No preference" },
-    errors: {
-      nameRequired: "Enter your name.",
-      emailRequired: "Enter your email address.",
-      emailInvalid: "Enter a valid email address.",
-      phoneInvalid: "Enter a valid phone number or leave this field empty.",
-      reasonRequired: "Enter a reason for your visit.",
+    labels: {
+      name: "Nome",
+      email: "E-mail",
+      phone: "Telefone (opcional)",
+      reason: "Motivo da consulta",
+      preferredTime: "Horário de preferência",
     },
-    submit: "Book a consultation",
-    success: { title: "Thank you.", body: "Kael Neurology will call you within two business days." },
+    preferredTimes: {
+      morning: "Manhã",
+      afternoon: "Tarde",
+      noPreference: "Sem preferência",
+    },
+    errors: {
+      nameRequired: "Informe seu nome.",
+      emailRequired: "Informe seu e-mail.",
+      emailInvalid: "Informe um e-mail válido.",
+      phoneInvalid: "Informe um telefone válido ou deixe este campo em branco.",
+      reasonRequired: "Informe o motivo da consulta.",
+    },
+    submit: "Agende uma consulta",
+    success: {
+      title: "Agradecemos seu contato.",
+      body: "A Kael Neurologia entrará em contato por telefone em até dois dias úteis.",
+    },
   },
 } as const satisfies SectionContent & {
   addressLabel: string;
@@ -197,8 +278,10 @@ export const CONTACT = {
 
 export const FOOTER = {
   wordmark: NAV.wordmark,
-  navigationLabel: "Footer navigation",
-  modelCredits: "Model credits",
-  attribution: "Brain model: Z-Anatomy – The libre 3D atlas of anatomy, and BodyParts3D (DBCLS), licensed CC BY-SA 4.0.",
-  disclaimer: "Dr. Sofia Kael and Kael Neurology are fictional. This site is a design project and does not provide medical advice.",
+  navigationLabel: "Navegação do rodapé",
+  modelCredits: "Créditos do modelo",
+  attribution:
+    "Modelo do cérebro: Z-Anatomy – The libre 3D atlas of anatomy e BodyParts3D (DBCLS), sob licença CC BY-SA 4.0.",
+  disclaimer:
+    "A Dra. Sofia Kael e a Kael Neurologia são fictícias. O endereço e o telefone também são fictícios. Este site é um projeto de design e não oferece orientação médica.",
 } as const satisfies Record<string, string>;

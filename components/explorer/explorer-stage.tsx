@@ -1,24 +1,45 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { Component, useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import {
+  Component,
+  useEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type ReactNode,
+} from "react";
 import type { Gesture } from "@/components/explorer/brain-stage";
-import { useExplorer, useExplorerDispatch } from "@/components/explorer/explorer-store";
+import {
+  useExplorer,
+  useExplorerDispatch,
+} from "@/components/explorer/explorer-store";
 import { SpecimenOutline } from "@/components/explorer/specimen-outline";
-import { StructureCallout, type CalloutHandle } from "@/components/explorer/structure-callout";
+import {
+  StructureCallout,
+  type CalloutHandle,
+} from "@/components/explorer/structure-callout";
 import { StructureIndex } from "@/components/explorer/structure-index";
 import { StructurePanel } from "@/components/explorer/structure-panel";
 import { ToolRail } from "@/components/explorer/tool-rail";
-import { useMediaQuery, useReducedMotion } from "@/components/explorer/use-media-query";
+import {
+  useMediaQuery,
+  useReducedMotion,
+} from "@/components/explorer/use-media-query";
 import { EXPLORER } from "@/content/site";
 import { CAMERA_MS } from "@/lib/brain/framing";
 import { cn } from "@/lib/utils";
 
 // `ssr: false` code-splits only from a client file (#2), which keeps the 3D chunk out of the initial route.
-const BrainStage = dynamic(() => import("@/components/explorer/brain-stage"), { ssr: false });
+const BrainStage = dynamic(() => import("@/components/explorer/brain-stage"), {
+  ssr: false,
+});
 
 /** Slice's controls (and Base UI's slider) load with the scene: they only show once Slice is on. */
-const loadSliceControls = () => import("@/components/explorer/slice-controls").then((module) => module.SliceControls);
+const loadSliceControls = () =>
+  import("@/components/explorer/slice-controls").then(
+    (module) => module.SliceControls,
+  );
 const SliceControls = dynamic(loadSliceControls, { ssr: false });
 
 /** idle: not near yet · loading: fetching the GLB · ready: first frame on screen · fallback: no WebGL2 or the load failed. */
@@ -75,7 +96,9 @@ export function ExplorerStage() {
       if (!seen.near || !(seen.scrolled || seen.onScreen)) return;
       near.disconnect();
       removeEventListener("scroll", onScroll);
-      setPhase((phase) => (phase === "idle" ? (supportsWebGL2() ? "loading" : "fallback") : phase));
+      setPhase((phase) =>
+        phase === "idle" ? (supportsWebGL2() ? "loading" : "fallback") : phase,
+      );
     };
     const onScroll = () => {
       seen.scrolled = true;
@@ -130,7 +153,10 @@ export function ExplorerStage() {
         <SpecimenOutline data-testid="specimen-outline" />
       </div>
 
-      <div role="img" aria-label={EXPLORER.canvasDescription} className="absolute inset-0">
+      <div
+        role="img"
+        aria-label={EXPLORER.canvasDescription}
+        className="absolute inset-0">
         {live ? (
           <SceneBoundary onError={fail}>
             <div
@@ -162,11 +188,16 @@ export function ExplorerStage() {
           <p
             data-testid="specimen-readout"
             aria-hidden={ready}
-            className={cn("label text-ink tabular-nums transition-opacity duration-(--dur-slow)", ready && "opacity-0")}>
+            className={cn(
+              "label text-ink tabular-nums transition-opacity duration-(--dur-slow)",
+              ready && "opacity-0",
+            )}>
             {EXPLORER.loading} · {ready ? 100 : percent}%
           </p>
         ) : null}
-        {phase === "fallback" ? <p className="max-w-md text-body-s text-ink">{EXPLORER.fallback}</p> : null}
+        {phase === "fallback" ? (
+          <p className="max-w-md text-body-s text-ink">{EXPLORER.fallback}</p>
+        ) : null}
       </div>
 
       <FirstUseHint shown={ready && !touched} />
@@ -188,7 +219,9 @@ export function ExplorerStage() {
             "pointer-events-none absolute inset-x-0 bottom-6 z-20 flex flex-col items-center gap-2 px-(--gutter) transition-[right] duration-(--dur-base) ease-out",
             panelOpen && "lg:right-(--panel-w)",
           )}>
-          {sliceOn ? <SliceControls className="pointer-events-auto max-w-full" /> : null}
+          {sliceOn ? (
+            <SliceControls className="pointer-events-auto max-w-full" />
+          ) : null}
           <ToolRail className="pointer-events-auto" />
         </div>
       )}
@@ -212,7 +245,10 @@ function FirstUseHint({ shown }: { shown: boolean }) {
   );
 }
 
-class SceneBoundary extends Component<{ onError: () => void; children: ReactNode }, { failed: boolean }> {
+class SceneBoundary extends Component<
+  { onError: () => void; children: ReactNode },
+  { failed: boolean }
+> {
   state = { failed: false };
 
   static getDerivedStateFromError() {
@@ -238,4 +274,3 @@ function supportsWebGL2(): boolean {
     return false;
   }
 }
-

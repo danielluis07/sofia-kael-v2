@@ -18,9 +18,9 @@ test("without WebGL the stage stays on the line drawing and the text description
   await expect(stage.getByTestId("specimen-outline")).toBeVisible();
   await expect(stage.getByTestId("specimen-outline").locator('img[src="/art/specimen-outline.svg"]')).toHaveAttribute("alt", "");
   await expect(
-    page.getByText("Explore the brain using the Structure index. Each Structure has a description and a list of related Conditions."),
+    page.getByText("Explore o cérebro pelo índice de estruturas. Cada estrutura tem uma descrição e uma lista de condições relacionadas."),
   ).toBeVisible();
-  await expect(page.getByRole("img", { name: /^An interactive three-dimensional brain\./ })).toBeAttached();
+  await expect(page.getByRole("img", { name: /^Um cérebro interativo em três dimensões\./ })).toBeAttached();
   await expect(page.locator("#brain-explorer canvas")).toHaveCount(0);
   expect(glbRequested).toBe(false);
   expect(errors).toEqual([]);
@@ -31,13 +31,13 @@ test("without WebGL the Structure index and panel still work as text, and ?struc
   page.on("pageerror", (error) => errors.push(error));
   await page.goto("/?structure=pons#brain-explorer");
   await expect(page.locator("[data-specimen]")).toHaveAttribute("data-specimen", "fallback");
-  await expect(page.getByRole("complementary", { name: "Pons" })).toBeVisible();
+  await expect(page.getByRole("complementary", { name: "Ponte" })).toBeVisible();
 
-  const index = page.getByRole("list", { name: "Structure index" });
-  await index.getByRole("button", { name: "Cerebellum" }).click();
-  const cerebellum = page.getByRole("complementary", { name: "Cerebellum" });
+  const index = page.getByRole("list", { name: "Índice de estruturas" });
+  await index.getByRole("button", { name: "Cerebelo" }).click();
+  const cerebellum = page.getByRole("complementary", { name: "Cerebelo" });
   await expect(cerebellum).toBeVisible();
-  await expect(cerebellum.getByRole("link")).toHaveText(["Essential tremor", "Ataxia", "Vertigo"]);
+  await expect(cerebellum.getByRole("link")).toHaveText(["Tremor essencial", "Ataxia", "Vertigem"]);
   await expect(page).toHaveURL(/\/\?structure=cerebellum#brain-explorer$/);
   expect(errors).toEqual([]);
 });
@@ -45,6 +45,6 @@ test("without WebGL the Structure index and panel still work as text, and ?struc
 test("without WebGL ?condition= opens the Condition panel, with no tool rail", async ({ page }) => {
   await page.goto("/?condition=vertigo#brain-explorer");
   await expect(page.locator("[data-specimen]")).toHaveAttribute("data-specimen", "fallback");
-  await expect(page.getByRole("complementary", { name: "Vertigo" })).toBeVisible();
-  await expect(page.getByRole("group", { name: "Tools" })).toHaveCount(0);
+  await expect(page.getByRole("complementary", { name: "Vertigem" })).toBeVisible();
+  await expect(page.getByRole("group", { name: "Ferramentas" })).toHaveCount(0);
 });

@@ -9,15 +9,15 @@ test("fills the screen, traps keyboard focus, and restores it on Escape or Close
   const menu = page.getByRole("button", { name: "Menu", exact: true });
   await menu.focus();
   await page.keyboard.press("Enter");
-  const sheet = page.getByRole("dialog", { name: "Main navigation" });
+  const sheet = page.getByRole("dialog", { name: "Navegação principal" });
   await expect(sheet).toBeVisible();
   await expect(sheet).toHaveCSS("background-color", "rgb(252, 251, 250)");
   expect(await sheet.boundingBox()).toEqual({ x: 0, y: 0, width: 375, height: 812 });
-  await expect(sheet.getByRole("link")).toHaveText([...SECTIONS.map(({ label }) => label), "Book a consultation"]);
-  const close = sheet.getByRole("button", { name: "Close menu" });
+  await expect(sheet.getByRole("link")).toHaveText([...SECTIONS.map(({ label }) => label), "Agende uma consulta"]);
+  const close = sheet.getByRole("button", { name: "Fechar menu" });
   await expect(close).toBeFocused();
   await page.keyboard.press("Shift+Tab");
-  await expect(sheet.getByRole("link", { name: "Book a consultation" })).toBeFocused();
+  await expect(sheet.getByRole("link", { name: "Agende uma consulta" })).toBeFocused();
   await page.keyboard.press("Tab");
   await expect(close).toBeFocused();
   for (let i = 0; i < 14; i++) {
@@ -36,7 +36,7 @@ test("fills the screen, traps keyboard focus, and restores it on Escape or Close
 
 test("each link closes before jumping and moves keyboard focus to the section headline", async ({ page }) => {
   await page.goto("/");
-  for (const { id, label } of [...SECTIONS, { id: "contact", label: "Book a consultation" }]) {
+  for (const { id, label } of [...SECTIONS, { id: "contact", label: "Agende uma consulta" }]) {
     await page.getByRole("button", { name: "Menu", exact: true }).click();
     const sheet = page.getByRole("dialog");
     await sheet.getByRole("link", { name: label, exact: true }).focus();
@@ -65,7 +65,7 @@ test("resizing to desktop closes the sheet and releases the page", async ({ page
   await page.setViewportSize({ width: 1280, height: 900 });
   await expect(page.getByRole("dialog")).toBeHidden();
   await expect(page.getByRole("button", { name: "Menu", exact: true })).toBeHidden();
-  await page.getByRole("navigation", { name: "Main navigation" }).getByRole("link", { name: "About", exact: true }).click();
+  await page.getByRole("navigation", { name: "Navegação principal" }).getByRole("link", { name: "Sobre", exact: true }).click();
   await expect(page).toHaveURL(/#about$/);
 });
 
@@ -76,7 +76,7 @@ test.describe("with reduced motion", () => {
     await page.getByRole("button", { name: "Menu", exact: true }).click();
     await expect(page.getByRole("dialog")).toBeVisible();
     await expectNoAxeViolations(page);
-    await page.getByRole("dialog").getByRole("link", { name: "Contact", exact: true }).click();
+    await page.getByRole("dialog").getByRole("link", { name: "Contato", exact: true }).click();
     await expect(page.locator("#contact-title")).toBeFocused();
   });
 });
@@ -88,7 +88,7 @@ test.describe("without JavaScript", () => {
     await page.getByRole("button", { name: "Menu", exact: true }).click();
     await expect(page.getByRole("dialog")).toHaveCount(0);
     await expect(page).toHaveURL(/\/$/);
-    const footer = page.getByRole("navigation", { name: "Footer navigation" });
+    const footer = page.getByRole("navigation", { name: "Navegação do rodapé" });
     for (const { id, label } of SECTIONS) {
       await footer.getByRole("link", { name: label, exact: true }).click();
       await expect(page).toHaveURL(new RegExp(`#${id}$`));

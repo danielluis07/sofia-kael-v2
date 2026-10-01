@@ -4,9 +4,9 @@ import { expect, test, type Page } from "@playwright/test";
 const GLB = "**/models/brain.glb";
 
 const stage = (page: Page) => page.locator("[data-specimen]");
-const rail = (page: Page) => page.getByRole("group", { name: "Tools" });
-const xray = (page: Page) => rail(page).getByRole("button", { name: "X-ray" });
-const index = (page: Page) => page.getByRole("list", { name: "Structure index" });
+const rail = (page: Page) => page.getByRole("group", { name: "Ferramentas" });
+const xray = (page: Page) => rail(page).getByRole("button", { name: "Raio X" });
+const index = (page: Page) => page.getByRole("list", { name: "Índice de estruturas" });
 
 /** Loads `url` and waits until the Explorer is hydrated. */
 async function open(page: Page, url: string) {
@@ -42,8 +42,8 @@ test("the keyboard toggles it, and the cortex stays reachable through the Struct
   await expect(xray(page)).toHaveAttribute("aria-pressed", "false");
   await page.keyboard.press("Space");
 
-  await index(page).getByRole("button", { name: "Frontal lobe" }).click();
-  await expect(page.getByRole("complementary", { name: "Frontal lobe" })).toBeVisible();
+  await index(page).getByRole("button", { name: "Lobo frontal" }).click();
+  await expect(page.getByRole("complementary", { name: "Lobo frontal" })).toBeVisible();
   await expect(page).toHaveURL(/\?structure=frontal-lobe#brain-explorer$/);
   await expect(xray(page)).toHaveAttribute("aria-pressed", "true");
 });
@@ -55,7 +55,7 @@ test("clearing the Focus keeps X-ray on; Reset turns it off", async ({ page }) =
   await expect(page.getByRole("complementary")).toHaveCount(0);
   await expect(xray(page)).toHaveAttribute("aria-pressed", "true");
 
-  await rail(page).getByRole("button", { name: "Reset" }).click();
+  await rail(page).getByRole("button", { name: "Redefinir" }).click();
   await expect(xray(page)).toHaveAttribute("aria-pressed", "false");
 });
 
