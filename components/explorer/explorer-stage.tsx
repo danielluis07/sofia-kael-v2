@@ -174,9 +174,9 @@ export function ExplorerStage() {
       <StructureCallout ref={callout} />
       <StructureIndex
         className={cn(
-          "absolute top-12 right-(--gutter) max-h-[calc(100%-9rem)] transition-[right] duration-(--dur-base) ease-out md:top-16",
+          "absolute top-12 right-(--gutter) h-[calc(100%-9rem)] max-h-[calc(100%-9rem)] transition-[right] duration-(--dur-base) ease-out md:top-16",
           // Clear of Slice's controls, which stack above the rail.
-          sliceOn && "max-h-[calc(100%-12.5rem)]",
+          sliceOn && "h-[calc(100%-12.5rem)] max-h-[calc(100%-12.5rem)]",
           panelOpen && "lg:right-[calc(var(--panel-w)+1.5rem)]",
         )}
       />
