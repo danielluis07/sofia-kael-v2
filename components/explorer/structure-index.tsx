@@ -8,6 +8,7 @@ import { EXPLORER } from "@/content/site";
 import { STRUCTURES } from "@/content/structures";
 import { STRUCTURE_IDS, type StructureId } from "@/lib/brain/structures";
 import { cn } from "@/lib/utils";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 /**
  * The accessible way to reach every Structure (DESIGN.md §9): a collapsible
@@ -41,7 +42,7 @@ export function StructureIndex({ className }: { className?: string }) {
   };
 
   return (
-    <div className={cn("flex w-56 flex-col border border-rule bg-surface", className)}>
+    <div className={cn("flex w-56 flex-col border border-rule bg-surface", className, !open && "h-fit!")}>
       <button
         type="button"
         data-structure-index-toggle=""
@@ -52,34 +53,31 @@ export function StructureIndex({ className }: { className?: string }) {
         {EXPLORER.structureIndex}
         <ChevronDown aria-hidden className={cn("size-4 transition-transform duration-(--dur-fast)", open && "rotate-180")} strokeWidth={1.5} />
       </button>
-      <ul
-        id={listId}
-        hidden={!open}
-        aria-label={EXPLORER.structureIndex}
-        onKeyDown={onKeyDown}
-        className="min-h-0 overflow-y-auto border-t border-rule py-1">
-        {STRUCTURE_IDS.map((id) => (
-          <li key={id}>
-            <button
-              type="button"
-              data-structure={id}
-              tabIndex={id === tabStop ? 0 : -1}
-              aria-current={id === selected ? "true" : undefined}
-              onClick={() => dispatch({ type: "select", id })}
-              onFocus={() => {
-                setActive(id);
-                dispatch({ type: "hover", id });
-              }}
-              onBlur={() => dispatch({ type: "unhover", id })}
-              className={cn(
-                "w-full px-3 py-1.5 text-left font-mono text-xs text-ink hover:bg-paper-2 focus-visible:outline-offset-[-2px]",
-                id === selected && "bg-oxblood-tint text-oxblood hover:bg-oxblood-tint",
-              )}>
-              {STRUCTURES[id].name}
-            </button>
-          </li>
-        ))}
-      </ul>
+      <ScrollArea hidden={!open} className="min-h-0 flex-1 border-t border-rule">
+        <ul id={listId} aria-label={EXPLORER.structureIndex} onKeyDown={onKeyDown} className="py-1">
+          {STRUCTURE_IDS.map((id) => (
+            <li key={id}>
+              <button
+                type="button"
+                data-structure={id}
+                tabIndex={id === tabStop ? 0 : -1}
+                aria-current={id === selected ? "true" : undefined}
+                onClick={() => dispatch({ type: "select", id })}
+                onFocus={() => {
+                  setActive(id);
+                  dispatch({ type: "hover", id });
+                }}
+                onBlur={() => dispatch({ type: "unhover", id })}
+                className={cn(
+                  "w-full px-3 py-1.5 text-left font-mono text-xs text-ink hover:bg-paper-2 focus-visible:outline-offset-[-2px]",
+                  id === selected && "bg-oxblood-tint text-oxblood hover:bg-oxblood-tint",
+                )}>
+                {STRUCTURES[id].name}
+              </button>
+            </li>
+          ))}
+        </ul>
+      </ScrollArea>
     </div>
   );
 }
