@@ -99,7 +99,7 @@ export type ExplorerContent = SectionContent & {
 
 export const EXPLORER = {
   eyebrow: SECTIONS[2].label,
-  headline: "Entenda o cérebro",
+  headline: "Entendendo o cérebro humano",
   lede: "Selecione uma estrutura para conhecer sua função e as condições tratadas pela Dra. Kael. Gire o cérebro ou use as ferramentas para explorar seu interior.",
   hint: "Arraste para girar · Clique em uma estrutura",
   canvasDescription:
