@@ -48,7 +48,7 @@ export const HERO = {
 export const ABOUT = {
   eyebrow: SECTIONS[0].label,
   headline: "Cuidado neurológico com tempo para suas dúvidas.",
-  lede: "A Dra. Kael ajuda você a compreender os sintomas que afetam o cérebro e o sistema nervoso, desde as primeiras dúvidas até o acompanhamento contínuo.",
+  lede: "",
   biography:
     "A Dra. Sofia Kael é neurologista clínica na Kael Neurologia, em São Paulo. Suas consultas começam com uma conversa sobre os sintomas e como eles afetam o dia a dia. Ela avalia seu histórico de saúde e examina o funcionamento do sistema nervoso. A Dra. Kael explica quando exames complementares podem ajudar e apresenta as opções de cuidado em uma linguagem clara.",
   pullQuote: "Uma conversa atenta ajuda a compreender os sintomas.",
